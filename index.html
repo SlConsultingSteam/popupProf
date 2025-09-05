@@ -50,7 +50,7 @@
                             </tr>
                         </thead>
                         <tbody id="users-body">
-                            <tr class="user-row" onclick="showPopup(0)">
+                            <!-- <tr class="user-row" onclick="showPopup(0)">
                                 <td>Sebastian Granada</td>
                                 <td>3188901674</td>
                                 <td>Proyecto</td>
@@ -58,7 +58,7 @@
                                 <td>Hecho</td>
                                 <td>Pendiente</td>
                                 <td>Pendiente</td>
-                            </tr>
+                            </tr> -->
                         </tbody>
                     </table>
                 </main> 
@@ -68,18 +68,17 @@
     </main>
         <!-- Modal Popup -->
         <div class="modal fade modal-custom" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="infoModalLabel">Información reclutamiento</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body" id="modalBodyContent">
-                        <!-- Aquí se carga la información dinámica -->
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="infoModalLabel">Detalle Participante / Reclutamiento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="modalBodyContent">
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Formulario plantilla oculto para el popup -->
         <form id="popupFormTemplate" style="display:none">
@@ -241,133 +240,16 @@
 
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+        <script src="js/auth.js"></script>
+        <script src="js/reclutamientos.js"></script>
         <script>
-        const loggedIn = sessionStorage.getItem("loggedIn");
-        if (!loggedIn) {
-                window.location.href = "login.html";
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
         }
         function logout() {
-                sessionStorage.clear();
-                window.location.href = "login.html";
-        }
-
-        // Datos de los participantes
-        const participantes = [
-            {
-                //DATOS SOCIODEMOGRAFICOS
-                origen: "Formulario web",
-                nombre_apellido: "Sebastian Granada",
-                mama: "Sí",
-                cedula: "1.234.567.890",
-                nacionalidad: "Colombiana",
-                edad: "29",
-                direccion: "Calle 123 #45-67",
-                barrio: "San Fernando",
-                nse: "4",
-                telefono1: "3188901674",
-                telefono2: "3115557788",
-                telefono3: "",
-                correo: "sebastian@example.com",
-                viaje_2meses: "No",
-                bebe_nombre: "Mateo",
-                bebe_nacimiento: "15/03/2024",
-                bebe_edad_meses: "17",
-                bebe_dias_meses: "17 meses",
-                bebe_sexo: "Masculino",
-                crema_marca: "MarcaX",
-                crema_referencia: "ReferenciaX",
-                crema_producto: "ProductoX",
-                crema_frecuencia: "5",
-                otra_crema_si_no: "No",
-                otra_crema_marca: "-",
-                otra_crema_marca_referencia: "-",
-                otra_crema_razones: "-",
-                otra_crema_frecuencia: "-",
-                cambios_panal_dia: "6",
-                profesional: "Dra. López",
-                // ESTATUS DE ENCUADRE
-                fecha_asignacion_gestora: "2025-08-01",
-                fecha_asignacion_supervisora: "2025-08-02",
-                fecha_realizacion_profesional: "2025-08-03 ",
-                estado_encuadre: "Completado",
-                tiempo_estatus_encuadre: "45",
-                // CRONOGRAMA ENTREVISTA INICIAL
-                fecha_ideal_min: "2025-08-10",
-                fecha_ideal_max: "2025-08-15",
-                fecha_real: "2025-08-12",
-                hora: "10:00 AM",
-                link_entrevista: "https://meet.example.com/abc123",
-                efectividad: "Alta",
-                tiempo_entrevista_inicial: "35 minutos",
-                calificacion_tiro_blanco: "9/10",
-                // ENTREGA
-                fecha_entrega_producto: "2025-08-20",
-                // ESTATUS DE RECIBO
-                fecha_recibo: "2025-08-22",
-                tiempo_estatus_recibo: "15",
-                confirmacion_verbal: "Sí",
-                // PRIMERA MUESTRA
-                fecha_ideal_inicio_muestra: "2025-08-23",
-                fecha_inicio_muestra: "2025-08-24",
-                fecha_ideal_seguimiento_uso: "2025-08-27",
-                fecha_seguimiento_real_uso: "2025-08-28",
-                fecha_ideal_evaluacion_monadica: "2025-08-30",
-                fecha_real_evaluacion_monadica: "2025-08-31",
-                tiempo_evaluacion_monadica: "20",
-                irritacion_bebe_primer_producto: "No",
-                // CRONOGRAMA ENTREVISTA FINAL
-                fecha_ideal_min_final: "2025-09-05",
-                fecha_ideal_max_final: "2025-09-10",
-                fecha_entrevista_final: "2025-09-08",
-                hora_final: "09:30 AM",
-                status_efectividad_final: "Alta (asistió y participó activamente)",
-                modalidad_entrevista_final: "Virtual",
-                tiempo_entrevista_final: "40",
-                calificacion_tiro_blanco_final: "10/10",
-                // RESTITUCIÓN (PROFESIONALES)
-                fecha_ideal_maxima_restitucion: "2025-09-15",
-                restitucion_entregables: "Entregados",
-                fecha_real_restitucion: "2025-09-16",
-                // BONO
-                fecha_ideal_envio_admin: "2025-09-18",
-                fecha_envio_real_admin: "2025-09-19",
-                fecha_ideal_maxima_entrega_bono: "2025-09-22",
-                fecha_real_entrega_bono: "2025-09-23",
-                observaciones_bono: "Participante entregó todos los documentos a tiempo.",
-            },
-            
-        ];
-
-        function showPopup(idx) {
-            const p = participantes[idx];
-            // Clonar el formulario plantilla
-            const template = document.getElementById('popupFormTemplate');
-            const clone = template.cloneNode(true);
-            clone.style.display = '';
-            // Rellenar los campos editables
-            clone.querySelectorAll('[data-field]').forEach(function(el) {
-                const field = el.getAttribute('data-field');
-                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                    el.value = p[field] || '';
-                }
-            });
-            // Manejar submit (puedes personalizar la lógica de guardado aquí)
-            clone.onsubmit = function(e) {
-                e.preventDefault();
-                // Ejemplo: mostrar los datos editados en consola
-                const data = {};
-                clone.querySelectorAll('[data-field]').forEach(function(el) {
-                    data[el.getAttribute('data-field')] = el.value;
-                });
-                console.log('Datos guardados:', data);
-                // Cerrar modal
-                var modal = bootstrap.Modal.getInstance(document.getElementById('infoModal'));
-                if(modal) modal.hide();
-            };
-            document.getElementById('modalBodyContent').innerHTML = '';
-            document.getElementById('modalBodyContent').appendChild(clone);
-            var modal = new bootstrap.Modal(document.getElementById('infoModal'));
-            modal.show();
+            sessionStorage.clear();
+            window.location.href = "login.html";
         }
         </script>
 </body>
