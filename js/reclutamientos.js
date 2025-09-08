@@ -108,39 +108,38 @@ async function getProyecto(id, token) {
 const fieldMapping = {
   origen: ["origen","origen_dato","fuente_origen"],
   nombre_apellido: ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"],
-  mama: ["mama","madre"],
   cedula: ["cedula","documento","id_documento"],
   nacionalidad: ["nacionalidad","pais_origen"],
   edad: ["edad"],
   direccion: ["direccion","direccion_residencia"],
   barrio: ["barrio"],
   nse: ["nse","estrato","nivel_socioeconomico"],
-  correo: ["correo","email","email_principal"],
+  correo: ["correo_electronico","email","email_principal"],
   telefono1: ["telefono_1","telefono1","telefono","celular","contacto"],
   telefono2: ["telefono_2","telefono2"],
   telefono3: ["telefono_3","telefono3"],
   viaje_2meses: ["viaje_2meses"],
   bebe_nombre: ["bebe_nombre","nombre_hijo","nombre_bebe"],
-  bebe_nacimiento: ["bebe_nacimiento","fecha_nacimiento_bebe","fecha_nacimiento","nacimiento"],
-  bebe_edad_meses: ["bebe_edad_meses"],
-  bebe_dias_meses: ["bebe_dias_meses"],
-  bebe_sexo: ["bebe_sexo","sexo_bebe"],
-  crema_marca: ["crema_marca"],
-  crema_referencia: ["crema_referencia"],
-  crema_producto: ["crema_producto"],
-  crema_frecuencia: ["crema_frecuencia"],
-  otra_crema_si_no: ["otra_crema_si_no"],
-  otra_crema_marca: ["otra_crema_marca"],
-  otra_crema_marca_referencia: ["otra_crema_marca_referencia"],
-  otra_crema_razones: ["otra_crema_razones"],
-  profesional: ["profesional"],
-  otra_crema_frecuencia: ["otra_crema_frecuencia"],
-  cambios_panal_dia: ["cambios_panal_dia"],
+  // quitar 'fecha_nacimiento' para no tomar la del participante como la del bebé
+  bebe_nacimiento: ["bebe_nacimiento","fecha_nacimiento_bebe","nacimiento"],
+  bebe_edad_meses: ["p4","bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
+  bebe_sexo: ["sexo","sexo_bebe"],
+  crema_marca: ["p23"],
+  crema_frecuencia: ["p25"],
+  otra_crema_si_no: ["p8"],
+  otra_crema_marca: ["p9"],
+  otra_crema_marca_referencia: ["p10"],
+  otra_crema_razones: ["p11"],
+  // profesional eliminado del formulario
+  otra_crema_frecuencia: ["p12"],
+  // cambios_panal_dia eliminado del formulario
   fecha_asignacion_gestora: ["fecha_asignacion_gestora","fecha_asignacion_g"],
   fecha_asignacion_supervisora: ["fecha_asignacion_supervisora","fecha_asignacion_s"],
   fecha_realizacion_profesional: ["fecha_realizacion_profesional","fecha_realizacion_p"],
   estado_encuadre: ["estado_encuadre","estado"],
   tiempo_estatus_encuadre: ["tiempo_estatus_encuadre","tiempo_encuadre"],
+  // permitir que si el input usa 'tiempo_encuadre' directamente también funcione
+  tiempo_encuadre: ["tiempo_encuadre","tiempo_estatus_encuadre"],
   fecha_ideal_min: ["fecha_ideal_min"],
   fecha_ideal_max: ["fecha_ideal_max"],
   fecha_real: ["fecha_real","fecha_e_inicial"],
@@ -154,18 +153,18 @@ const fieldMapping = {
   tiempo_estatus_recibo: ["tiempo_estatus_recibo","tiempo_recibo"],
   confirmacion_verbal: ["confirmacion_verbal"],
   fecha_ideal_inicio_muestra: ["fecha_ideal_inicio_muestra"],
-  fecha_inicio_muestra: ["fecha_inicio_muestra","fecha_inicio_muestras","fecha_inicio_muestras_0"],
+  fecha_inicio_muestra: ["fecha_inicio_muestras","fecha_inicio_muestra_0"],
   fecha_ideal_seguimiento_uso: ["fecha_ideal_seguimiento_uso"],
   fecha_seguimiento_real_uso: ["fecha_seguimiento_real_uso","fecha_seg_muestras","fecha_seg_muestras_0"],
   fecha_ideal_evaluacion_monadica: ["fecha_ideal_evaluacion_monadica"],
-  fecha_real_evaluacion_monadica: ["fecha_real_evaluacion_monadica","fecha_final"],
-  tiempo_evaluacion_monadica: ["tiempo_evaluacion_monadica","tiempo_monadica_muestras_0"],
+  fecha_real_evaluacion_monadica: ["fecha_monadica","fecha_real_evaluacion_monadica"],
+  tiempo_evaluacion_monadica: ["tiempo_monadica_muestras","tiempo_monadica_muestras_0"],
   irritacion_bebe_primer_producto: ["irritacion_bebe_primer_producto","irritaciones","irritaciones_0"],
   fecha_ideal_min_final: ["fecha_ideal_min_final"],
   fecha_ideal_max_final: ["fecha_ideal_max_final"],
   fecha_entrevista_final: ["fecha_entrevista_final","fecha_final"],
   hora_final: ["hora_final"],
-  status_efectividad_final: ["status_efectividad_final"],
+  status_efectividad_final: ["efectividad_final"],
   modalidad_entrevista_final: ["modalidad_entrevista_final","modalidad_entrevista"],
   tiempo_entrevista_final: ["tiempo_entrevista_final","tiempo_final"],
   calificacion_tiro_blanco_final: ["calificacion_tiro_blanco_final"],
@@ -176,7 +175,7 @@ const fieldMapping = {
   fecha_envio_real_admin: ["fecha_envio_real_admin","fecha_envio_admin"],
   fecha_ideal_maxima_entrega_bono: ["fecha_ideal_maxima_entrega_bono"],
   fecha_real_entrega_bono: ["fecha_real_entrega_bono","fechas_bono","fechas_bono_0"],
-  observaciones_bono: ["observaciones_bono","observaciones","observaciones_entreg"]
+  observaciones_bono: ["observaciones"]
 };
 
 // Override de nombres al guardar
@@ -203,11 +202,11 @@ async function cargarReclutamientos() {
   const tbody = document.getElementById("users-body");
   if (!token || !idProfesional || !tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="7">Cargando...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8">Cargando...</td></tr>`;
 
   const reclutamientos = await getReclutamientos(idProfesional, token);
   if (!Array.isArray(reclutamientos) || reclutamientos.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7">Sin registros</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8">Sin registros</td></tr>`;
     return;
   }
 
@@ -275,18 +274,29 @@ async function cargarReclutamientos() {
       else proyectoNombre = norm(bd, ["proyecto","id_bdproyecto","id"], r.id_bdproyecto);
     }
     const ciudad = norm(part, ["ciudad","municipio","localidad"]);
-    const encuadre = norm(r, ["estado"]);
-    const monadica = (r.tiempo_monadica_muestras && r.tiempo_monadica_muestras.length > 0) ? "En proceso" : "-";
-    const finalE = r.fecha_final ? "Finalizado" : "-";
+    function okBool(val){ return val === true || val === 'true' || val === 'OK'; }
+    const encuadre = okBool(r.estado) ? 'OK' : '-';
+    const inicial = okBool(r.efectividad) ? 'OK' : '-';
+    let monadica = '-';
+    if (Array.isArray(r.tiempo_monadica_muestras) && r.tiempo_monadica_muestras.length > 0) {
+      const first = r.tiempo_monadica_muestras[0];
+      if (first && typeof first === 'object' && 'Duration' in first) {
+        if (Number(first.Duration) > 0) monadica = 'OK';
+      } else {
+        monadica = 'OK';
+      }
+    }
+  const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
 
     return `<tr class="recl-row" data-id-recl="${escapeHTML(r.id)}">
       <td>${escapeHTML(nombre)}</td>
       <td>${escapeHTML(telefono)}</td>
   <td>${escapeHTML(proyectoNombre)}</td>
       <td>${escapeHTML(ciudad)}</td>
-      <td>${escapeHTML(encuadre)}</td>
-      <td>${escapeHTML(monadica)}</td>
-      <td>${escapeHTML(finalE)}</td>
+  <td>${escapeHTML(encuadre)}</td>
+  <td>${escapeHTML(inicial)}</td>
+  <td>${escapeHTML(monadica)}</td>
+  <td>${escapeHTML(finalE)}</td>
     </tr>`;
   }).join("");
 
@@ -319,6 +329,60 @@ let modalState = {
   originalValues: {}
 };
 
+// Offset horario (en horas) para ajustar times que vienen en GMT-5 y se muestran 5h antes
+// Si ves que ahora se suman horas incorrectas ajusta este valor.
+const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
+const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
+
+function applyTimeOffset(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  if(isNaN(d.getTime())) return null;
+  const shifted = new Date(d.getTime() + TIME_OFFSET_HOURS * 3600000);
+  const hh = String(shifted.getHours()).padStart(2,'0');
+  const mm = String(shifted.getMinutes()).padStart(2,'0');
+  return `${hh}:${mm}`;
+}
+
+function normalizeInterval(val){
+  if(val == null) return "";
+  // Si viene como objeto {Duration, Valid}
+  if (typeof val === 'object' && val !== null && 'Duration' in val) {
+    const ns = Number(val.Duration);
+    if(!isNaN(ns) && ns > 0) {
+      const totalSeconds = Math.floor(ns / 1e9);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600)/60);
+      const seconds = totalSeconds % 60;
+  // Siempre devolver con segundos para consistencia: HH:MM:SS
+  return `${String(hours)}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    }
+    return "";
+  }
+  let s = String(val).trim();
+  if(s === "") return "";
+  // Si viene como 'HH:MM:SS.sss' cortar
+  const frac = s.indexOf('.')>0 ? s.split('.')[0] : s;
+  // Si viene como solo números (ej 1305) interpretarlo como 13:05
+  if(/^[0-9]{3,4}$/.test(frac)) {
+    const raw = frac.padStart(4,'0');
+    s = raw.slice(0,raw.length-2)+":"+raw.slice(-2);
+  } else {
+    s = frac;
+  }
+  // Asegurar formato HH:MM o HH:MM:SS
+  const parts = s.split(':');
+  if(parts.length === 2){
+    const [h,m] = parts;
+    // devolver con segundos 00
+    return `${String(Number(h))}:${m.padStart(2,'0')}:00`;
+  } else if(parts.length === 3){
+    const [h,m,sec] = parts;
+    return `${String(Number(h))}:${m.padStart(2,'0')}:${sec.padStart(2,'0')}`;
+  }
+  return s; // fallback
+}
+
 function openReclutamientoModal(reclId) {
   const triple = reclIndex.get(reclId);
   if (!triple) {
@@ -342,18 +406,183 @@ function openReclutamientoModal(reclId) {
   modalBody.appendChild(clone);
 
   const combined = {};
-  Object.assign(combined, reclutamiento);
+  // Merge bdProyecto primero para que reclutamiento tenga prioridad en campos duplicados (ej. observaciones)
   if (bdProyecto) Object.assign(combined, bdProyecto);
-  if (participante) Object.assign(combined, participante);
-  if (hijo) Object.assign(combined, hijo); // hijo aporta nombre_hijo, fecha_nacimiento, sexo, etc.
+  Object.assign(combined, reclutamiento);
+  if (participante) Object.assign(combined, participante); // prioridad a datos del participante
+  if (hijo) {
+    const hijoCopy = {...hijo};
+    // Si el hijo trae fecha_nacimiento y ya existe una del participante, renombrar
+    if (hijoCopy.fecha_nacimiento && combined.fecha_nacimiento && hijoCopy.fecha_nacimiento !== combined.fecha_nacimiento) {
+      hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
+      delete hijoCopy.fecha_nacimiento;
+    }
+    Object.assign(combined, hijoCopy); // ahora no sobreescribe la del participante
+  }
 
   console.log("[COMBINED]", combined);
+
+  // Calcular edad solo del PARTICIPANTE: usar la fecha_nacimiento que quedó tras merge (no la del bebé renombrada)
+  const birthKeys = ["fecha_nacimiento"]; // ya no incluye la del bebé
+  let birthDateStr = null;
+  for (const k of birthKeys) {
+    if (combined[k]) { birthDateStr = combined[k]; break; }
+  }
+  if (birthDateStr && !combined.edad) {
+    const d = new Date(birthDateStr);
+    if (!isNaN(d.getTime())) {
+      const today = new Date();
+      let age = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+      if (age >= 0 && age < 130) combined.edad = String(age); // asignar edad estimada
+    }
+  }
+
+  // Derivar hora y hora_final desde fechas si faltan
+  function extractTime(str){
+    if(!str) return null;
+    // Intentar parse ISO y aplicar offset
+    const d = new Date(str);
+    if(!isNaN(d.getTime())) {
+      const shifted = new Date(d.getTime() + TIME_OFFSET_HOURS * 3600000);
+      const hh = String(shifted.getHours()).padStart(2,'0');
+      const mm = String(shifted.getMinutes()).padStart(2,'0');
+      return `${hh}:${mm}`;
+    }
+    // Fallback simple buscar HH:MM
+    const m = str.match(/(\d{2}:\d{2})/);
+    return m ? m[1] : null;
+  }
+  if(!combined.hora && combined.fecha_e_inicial){
+    const t = extractTime(combined.fecha_e_inicial);
+    if(t) combined.hora = t;
+  }
+  if(!combined.hora_final && combined.fecha_final){
+    const t2 = extractTime(combined.fecha_final);
+    if(t2) combined.hora_final = t2;
+  }
+
+  // Derivar fechas de entrega y recibo desde fecha_despacho[0] y [1]
+  if (Array.isArray(combined.fecha_despacho)) {
+    if (!combined.fecha_entrega_producto && combined.fecha_despacho[0]) {
+      combined.fecha_entrega_producto = combined.fecha_despacho[0];
+    }
+    if (!combined.fecha_recibo && combined.fecha_despacho[1]) {
+      combined.fecha_recibo = combined.fecha_despacho[1];
+    }
+  }
+
+  // ---------------- Cálculo automático de fechas ideales ----------------
+  // Regla solicitada:
+  // fecha_ideal_min = fecha_realizacion_profesional + 1 día
+  // fecha_ideal_max = fecha_realizacion_profesional + 3 días
+  function addDays(dateStr, days){
+    if(!dateStr) return null;
+    const d = new Date(dateStr);
+    if(isNaN(d.getTime())) return null;
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const baseRealizacion = combined.fecha_realizacion_profesional || combined.fecha_realizacion_p;
+  if (baseRealizacion) {
+    if(!combined.fecha_ideal_min || combined.fecha_ideal_min === '') {
+      const calcMin = addDays(baseRealizacion, 2);
+      if(calcMin) combined.fecha_ideal_min = calcMin;
+    }
+    if(!combined.fecha_ideal_max || combined.fecha_ideal_max === '') {
+      const calcMax = addDays(baseRealizacion, 4);
+      if(calcMax) combined.fecha_ideal_max = calcMax;
+    }
+  }
+
+  const baseRealizacion2 = combined.fecha_despacho[1];
+  if (baseRealizacion2) {
+    if(!combined.fecha_ideal_inicio_muestra || combined.fecha_ideal_inicio_muestra === '') {
+      const calcMin = addDays(baseRealizacion2, 2);
+      if(calcMin) combined.fecha_ideal_inicio_muestra = calcMin;
+    }
+    if(!combined.fecha_ideal_seguimiento_uso || combined.fecha_ideal_seguimiento_uso === '') {
+      const calcMin = addDays(baseRealizacion2, 5);
+      if(calcMin) combined.fecha_ideal_seguimiento_uso = calcMin;
+    }
+  }
+
+  const baseRealizacion3 = combined.fecha_inicio_muestras[0];
+  if (baseRealizacion3) {
+    if(!combined.fecha_ideal_evaluacion_monadica || combined.fecha_ideal_evaluacion_monadica === '') {
+      const calcMin = addDays(baseRealizacion3, 8);
+      if(calcMin) combined.fecha_ideal_evaluacion_monadica = calcMin;
+    }
+  }
+
+  const baseRealizacion4 = combined.fecha_monadica;
+  if (baseRealizacion4) {
+    if(!combined.fecha_ideal_min_final || combined.fecha_ideal_min_final === '') {
+      const calcMin = addDays(baseRealizacion4, 2);
+      if(calcMin) combined.fecha_ideal_min_final = calcMin;
+    }
+    if(!combined.fecha_ideal_max_final || combined.fecha_ideal_max_final === '') {
+      const calcMax = addDays(baseRealizacion4, 4);
+      if(calcMax) combined.fecha_ideal_max_final = calcMax;
+    }
+  }
+
+  const baseRealizacion5 = combined.fecha_final;
+  if (baseRealizacion5) {
+    if(!combined.fecha_ideal_maxima_restitucion || combined.fecha_ideal_maxima_restitucion === '') {
+      const calcMin = addDays(baseRealizacion5, 4);
+      if(calcMin) combined.fecha_ideal_maxima_restitucion = calcMin;
+    }
+    if(!combined.fecha_ideal_envio_admin || combined.fecha_ideal_envio_admin === '') {
+      const calcMin = addDays(baseRealizacion5, 3);
+      if(calcMin) combined.fecha_ideal_envio_admin = calcMin;
+    }
+  }
+
+  const baseRealizacion6 = combined.fecha_envio_admin;
+  if (baseRealizacion6) {
+    if(!combined.fecha_ideal_maxima_entrega_bono || combined.fecha_ideal_maxima_entrega_bono === '') {
+      const calcMin = addDays(baseRealizacion6, 4);
+      if(calcMin) combined.fecha_ideal_maxima_entrega_bono = calcMin;
+    }
+  }
+  // ----------------------------------------------------------------------
 
   modalState.originalValues = {};
   clone.querySelectorAll("[data-field]").forEach(input => {
     const key = input.getAttribute("data-field");
-    const val = resolveValue(key, combined);
+    let val = resolveValue(key, combined);
+    // Conversión específica para bebe_edad_meses: si es número grande (días) -> meses
+    if (key === 'bebe_edad_meses') {
+      const num = Number(val);
+      if (!isNaN(num) && num > 24) { // umbral: >24 días probablemente no son meses todavía
+        const months = Math.floor(num / 30); // aproximación
+        val = String(months);
+      }
+    }
+    // Normalizar intervalos para campos tiempo_*
+    if (key.startsWith('tiempo_')) {
+      val = normalizeInterval(val);
+    }
     // Ajustes de tipo date/time (si backend devuelve '2025-09-05T00:00:00Z')
+    // Selects booleanos
+    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(key)) {
+      if (key === 'estado_encuadre') {
+        if (val === 'OK' || val === true || val === 'true') input.value = 'true';
+        else if (val === '' || val == null) input.value = '';
+        else input.value = 'false';
+      } else {
+        if (val === true || val === 'true') input.value = 'true';
+        else if (val === false || val === 'false') input.value = 'false';
+        else input.value = '';
+      }
+      modalState.originalValues[key] = input.value;
+      return;
+    }
     if (input.type === "date" && val && val.length >= 10) {
       input.value = val.substring(0,10);
     } else if (input.type === "time" && val) {
@@ -362,6 +591,51 @@ function openReclutamientoModal(reclId) {
       input.value = val;
     }
     modalState.originalValues[key] = input.value;
+  });
+
+  // Guardar como valores originales los autocalculados para que no se marquen como cambios inmediatamente
+  ["fecha_ideal_min","fecha_ideal_max"].forEach(k => {
+    const inp = clone.querySelector(`[data-field="${k}"]`);
+    if (inp && modalState.originalValues[k] === undefined) {
+      modalState.originalValues[k] = inp.value;
+    }
+  });
+
+  // Listener: si cambia la fecha_realizacion_profesional recalcular ideales (solo si usuario no los modificó luego)
+  const realizInp = clone.querySelector('[data-field="fecha_realizacion_profesional"]');
+  if (realizInp) {
+    realizInp.addEventListener('change', () => {
+      const base = realizInp.value;
+      if(!base) return;
+      const minInp = clone.querySelector('[data-field="fecha_ideal_min"]');
+      const maxInp = clone.querySelector('[data-field="fecha_ideal_max"]');
+      if(minInp) {
+        const oldAuto = modalState.originalValues['fecha_ideal_min'];
+        if(minInp.value === oldAuto || !minInp.value) {
+          const newMin = addDays(base,2);
+          if(newMin) minInp.value = newMin;
+        }
+      }
+      if(maxInp) {
+        const oldAuto = modalState.originalValues['fecha_ideal_max'];
+        if(maxInp.value === oldAuto || !maxInp.value) {
+          const newMax = addDays(base,4);
+          if(newMax) maxInp.value = newMax;
+        }
+      }
+    });
+  }
+
+  // Validación en vivo de intervalos
+  clone.querySelectorAll('[data-field^="tiempo_"]').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const v = inp.value.trim();
+      if(v && !INTERVAL_REGEX.test(v)) {
+        inp.classList.add('is-invalid');
+      } else {
+        inp.classList.remove('is-invalid');
+      }
+    });
   });
 
   clone.addEventListener("submit", handleModalSave);
@@ -396,19 +670,19 @@ async function handleModalSave(e) {
 
   const participanteKeys = new Set([
     "nombre_participante","telefono","telefono2","telefono3","correo","barrio","direccion",
-    "ciudad","nacionalidad","edad","cedula","mama","viaje_2meses","bebe_nombre",
-    "bebe_nacimiento","bebe_edad_meses","bebe_dias_meses","bebe_sexo","crema_marca",
-    "crema_referencia","crema_producto","crema_frecuencia","otra_crema_si_no",
+    "ciudad","nacionalidad","edad","cedula","viaje_2meses","bebe_nombre",
+    "bebe_nacimiento","bebe_edad_meses","bebe_sexo","crema_marca",
+    "crema_frecuencia","otra_crema_si_no",
     "otra_crema_marca","otra_crema_marca_referencia","otra_crema_razones",
-    "otra_crema_frecuencia","cambios_panal_dia","origen","nse"
+    "otra_crema_frecuencia","origen","nse"
   ]);
   const bdProyectoKeys = new Set([
-    "proyecto","profesional","observaciones_bono"
+    "proyecto","observaciones_bono" // profesional eliminado
   ]);
   const reclutamientoKeys = new Set([
     "fecha_asignacion_gestora","fecha_asignacion_supervisora","fecha_realizacion_profesional",
     "estado_encuadre","tiempo_estatus_encuadre","fecha_ideal_min","fecha_ideal_max",
-    "fecha_real","hora","link_entrevista","efectividad","tiempo_entrevista_inicial",
+    "fecha_real","hora",/* "link_entrevista" <-- eliminado, se mapea a link */ "efectividad","tiempo_entrevista_inicial",
     "calificacion_tiro_blanco","fecha_entrega_producto","fecha_recibo",
     "tiempo_estatus_recibo","confirmacion_verbal","fecha_ideal_inicio_muestra",
     "fecha_inicio_muestra","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso",
@@ -426,15 +700,45 @@ async function handleModalSave(e) {
   const payloadBdProyecto = {};
   const payloadReclutamientoPartial = {};
 
-  Object.entries(changed).forEach(([k,v]) => {
-    if (participanteKeys.has(k)) payloadParticipante[k] = v;
-    else if (bdProyectoKeys.has(k)) payloadBdProyecto[k] = v;
-    else if (reclutamientoKeys.has(k)) payloadReclutamientoPartial[k] = v;
-    else console.warn("Campo sin destino:", k);
+  Object.entries(changed).forEach(([origKey, val]) => {
+    let k = origKey;
+    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(k)) {
+      if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
+    }
+
+    // Alias UI -> backend
+    if (k === 'link_entrevista') k = 'link';
+  if (k === 'estado_encuadre') k = 'estado';
+    if (k === 'fecha_entrevista_final') k = 'fecha_final';
+    if (k === 'modalidad_entrevista_final') k = 'modalidad_entrevista';
+    if (k === 'observaciones_bono') k = 'observaciones';
+    if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
+
+    // Normalizar intervalos
+    if (k.startsWith('tiempo_')) {
+      const norm = normalizeInterval(val);
+      if (norm && INTERVAL_REGEX.test(norm)) {
+        val = norm;
+      } else {
+        console.warn("Intervalo inválido ignorado:", k, val);
+        return;
+      }
+    }
+
+  if (participanteKeys.has(k)) {
+      payloadParticipante[k] = val;
+    } else if (bdProyectoKeys.has(k)) {
+      payloadBdProyecto[k] = val;
+    } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final'].includes(k)) {
+      payloadReclutamientoPartial[k] = val;
+    } else {
+      console.warn("Campo sin destino:", origKey, "->", k);
+    }
   });
 
   const requests = [];
   if (modalState.participanteId && Object.keys(payloadParticipante).length) {
+  console.log('[PUT participante payload]', payloadParticipante);
     requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
       method:"PUT",
       headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
@@ -443,6 +747,7 @@ async function handleModalSave(e) {
   }
   if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
     const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+  console.log('[PUT bdproyecto payload]', payloadBdProyecto);
     requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
       method:"PUT",
       headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
@@ -471,6 +776,7 @@ async function handleModalSave(e) {
       fecha_recibe: original.fecha_recibe ?? null,
       fecha_inicio_muestras: original.fecha_inicio_muestras ?? [],
       fecha_seg_muestras: original.fecha_seg_muestras ?? [],
+      fecha_monadica: original.fecha_monadica ?? [],
       irritaciones: original.irritaciones ?? [],
       fecha_final: original.fecha_final ?? null,
       tiempo_encuadre: original.tiempo_encuadre ?? null,
@@ -482,7 +788,8 @@ async function handleModalSave(e) {
       fechas_bono: original.fechas_bono ?? [],
       observaciones: original.observaciones ?? null,
       entregables: original.entregables ?? [],
-      efectividad: original.efectividad ?? null,
+  efectividad: original.efectividad ?? null,
+  efectividad_final: original.efectividad_final ?? null,
       modalidad_entrevista: original.modalidad_entrevista ?? null,
       observaciones_entregables: original.observaciones_entregables ?? null,
       fecha_codificacion: original.fecha_codificacion ?? null,
@@ -490,15 +797,133 @@ async function handleModalSave(e) {
     };
 
     // Sobrescribir con cambios UI (traducciones específicas si aplica)
-    for (const [k,v] of Object.entries(payloadReclutamientoPartial)) {
-      // Muchos campos UI ya usan snake_case del back
-      fullPayload[k] = v;
-      // Casos especiales de alias UI -> backend
-      if (k === 'estado_encuadre') fullPayload.estado = v;
-      if (k === 'fecha_entrevista_final') fullPayload.fecha_final = v;
-      if (k === 'modalidad_entrevista_final') fullPayload.modalidad_entrevista = v;
-      if (k === 'observaciones_bono') fullPayload.observaciones = v; // si decides mapearlo así
+    for (const [kOrig,vRaw] of Object.entries(payloadReclutamientoPartial)) {
+      const k = (kOrig === 'estado_encuadre') ? 'estado' : kOrig;
+      let v = vRaw;
+      if (k === 'link_entrevista') { // asegurar alias si entró así
+        fullPayload.link = v;
+        continue;
+      }
+      if (k === 'status_efectividad_final') { // mapear a efectividad_final
+        fullPayload.efectividad_final = (v === true || v === 'true');
+        continue;
+      }
+      if (k === 'fecha_real_evaluacion_monadica') { // mapear a array fecha_monadica
+        const dateOnly = (typeof v === 'string') ? v.substring(0,10) : v;
+        const arr = Array.isArray(fullPayload.fecha_monadica) ? fullPayload.fecha_monadica.slice() : [];
+        arr[0] = dateOnly;
+        fullPayload.fecha_monadica = arr;
+        continue;
+      }
+      if(k.startsWith('tiempo_') && typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+        const parts = v.split(':').map(Number);
+        let totalSeconds = 0;
+        if (parts.length === 2) totalSeconds = parts[0]*3600 + parts[1]*60;
+        else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
+        const ns = totalSeconds * 1e9;
+        fullPayload[k] = { Duration: ns, Valid: true };
+      } else if (k === 'fecha_entrevista_final') {
+        fullPayload.fecha_final = v;
+      } else if (k === 'modalidad_entrevista_final') {
+        fullPayload.modalidad_entrevista = v;
+      } else if (k === 'observaciones_bono') {
+        fullPayload.observaciones = v;
+      } else if (k === 'link') {                      // <--- asegura guardar en 'link'
+        fullPayload.link = v;
+      } else {
+        fullPayload[k] = v;
+      }
     }
+
+    // Mapear fecha_entrega_producto y fecha_recibo a array fecha_despacho (posiciones 0 y 1)
+    if ('fecha_entrega_producto' in payloadReclutamientoPartial || 'fecha_recibo' in payloadReclutamientoPartial) {
+      const origArr = Array.isArray(original.fecha_despacho) ? [...original.fecha_despacho] : [];
+      if ('fecha_entrega_producto' in payloadReclutamientoPartial) {
+        origArr[0] = payloadReclutamientoPartial.fecha_entrega_producto || null;
+      }
+      if ('fecha_recibo' in payloadReclutamientoPartial) {
+        origArr[1] = payloadReclutamientoPartial.fecha_recibo || null;
+      }
+      // Limpiar trailing undefined
+      fullPayload.fecha_despacho = origArr.filter((v,i) => v || i < 2);
+      delete fullPayload.fecha_entrega_producto;
+      delete fullPayload.fecha_recibo;
+    }
+
+    // --- Normalizar fechas: Backend espera timestamps con hora (ej: 2006-01-02T15:04:05Z) ---
+    // Reglas:
+    // 1. Campos con hora separada (fecha_e_inicial + hora) y (fecha_final + hora_final) se combinan.
+    // 2. Si solo hay fecha sin 'T', se le agrega 'T00:00:00Z'.
+    // 3. Arrays se normalizan igual elemento a elemento.
+
+    // function ensureDateTime(val){
+    //   if(!val) return val;
+    //   if(typeof val !== 'string') return val;
+    //   if(val.includes('T')) return val; // ya tiene hora
+    //   return `${val}T00:00:00Z`;
+    // }
+
+    // Combinar fecha_e_inicial con hora
+    const uiHora = payloadReclutamientoPartial.hora; // puede existir si usuario cambió
+    if (fullPayload.fecha_e_inicial) {
+      let datePart = fullPayload.fecha_e_inicial.split('T')[0];
+      let hourPart = uiHora || '00:00';
+      if (hourPart.length === 5) hourPart = hourPart + ':00';
+      fullPayload.fecha_e_inicial = `${datePart}T${hourPart}Z`;
+    }
+
+    // Combinar fecha_final con hora_final (solo si fecha_final existe)
+    const uiHoraFinal = payloadReclutamientoPartial.hora_final;
+    if (fullPayload.fecha_final) {
+      let datePart = fullPayload.fecha_final.split('T')[0];
+      let hourPart = uiHoraFinal || '00:00';
+      if (hourPart.length === 5) hourPart = hourPart + ':00';
+      fullPayload.fecha_final = `${datePart}T${hourPart}Z`;
+    }
+
+    // Otros campos fecha_* si vienen sin hora añadir midnight UTC
+    // const dateTimeFields = [
+    //   'fecha_asignacion_g','fecha_asignacion_s','fecha_realizacion_p','fecha_recibe',
+    //   'fecha_restitucion','fecha_envio_admin','fecha_codificacion'
+    // ];
+    // dateTimeFields.forEach(f => { if(fullPayload[f]) fullPayload[f] = ensureDateTime(fullPayload[f]); });
+
+    // function normalizeArrayDates(arr){
+    //   if(!Array.isArray(arr)) return arr;
+    //   return arr.map(v => ensureDateTime(v));
+    // }
+    // if (Array.isArray(fullPayload.fecha_despacho)) fullPayload.fecha_despacho = normalizeArrayDates(fullPayload.fecha_despacho);
+    // if (Array.isArray(fullPayload.fecha_inicio_muestras)) fullPayload.fecha_inicio_muestras = normalizeArrayDates(fullPayload.fecha_inicio_muestras);
+    // if (Array.isArray(fullPayload.fecha_seg_muestras)) fullPayload.fecha_seg_muestras = normalizeArrayDates(fullPayload.fecha_seg_muestras);
+    // if (Array.isArray(fullPayload.fechas_bono)) fullPayload.fechas_bono = normalizeArrayDates(fullPayload.fechas_bono);
+
+    // Truncar a solo fecha TODOS los demás campos (backend los quiere YYYY-MM-DD)
+    function toDateOnly(v){
+      if(typeof v === 'string') return v.substring(0,10);
+      return v;
+    }
+    const dateOnlyFields = [
+      'fecha_asignacion_g','fecha_asignacion_s','fecha_realizacion_p','fecha_recibe',
+      'fecha_restitucion','fecha_envio_admin','fecha_codificacion'
+    ];
+    dateOnlyFields.forEach(f => { if(fullPayload[f]) fullPayload[f] = toDateOnly(fullPayload[f]); });
+  ['fecha_despacho','fecha_inicio_muestras','fecha_seg_muestras','fechas_bono','fecha_monadica'].forEach(arrF => {
+      if(Array.isArray(fullPayload[arrF])) {
+        fullPayload[arrF] = fullPayload[arrF].map(x => x ? toDateOnly(x) : x);
+      }
+    });
+
+    // Asegurar que fecha_monadica sea SIEMPRE lista
+    if (fullPayload.fecha_monadica && !Array.isArray(fullPayload.fecha_monadica)) {
+      const v = fullPayload.fecha_monadica;
+      fullPayload.fecha_monadica = [toDateOnly(v)];
+    }
+
+    // Remover campos UI hora sueltos
+    delete fullPayload.hora;
+    delete fullPayload.hora_final;
+
+    console.log('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
 
     requests.push(fetch(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, {
       method:"PUT",
