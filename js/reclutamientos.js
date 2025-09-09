@@ -420,6 +420,16 @@ function openReclutamientoModal(reclId) {
     Object.assign(combined, hijoCopy); // ahora no sobreescribe la del participante
   }
 
+  // Derivar calificaciones desde arreglo tiro_blanco (si backend solo retorna lista)
+  if (Array.isArray(combined.tiro_blanco)) {
+    if (combined.tiro_blanco[0] != null && combined.calificacion_tiro_blanco == null) {
+      combined.calificacion_tiro_blanco = combined.tiro_blanco[0];
+    }
+    if (combined.tiro_blanco[1] != null && combined.calificacion_tiro_blanco_final == null) {
+      combined.calificacion_tiro_blanco_final = combined.tiro_blanco[1];
+    }
+  }
+
   console.log("[COMBINED]", combined);
 
   // Calcular edad solo del PARTICIPANTE: usar la fecha_nacimiento que quedó tras merge (no la del bebé renombrada)
@@ -693,7 +703,8 @@ async function handleModalSave(e) {
     "tiempo_entrevista_final","calificacion_tiro_blanco_final",
     "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
     "fecha_ideal_envio_admin","fecha_envio_real_admin",
-    "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono"
+  "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
+  "observaciones","observaciones_bono"
   ]);
 
   const payloadParticipante = {};
@@ -710,7 +721,6 @@ async function handleModalSave(e) {
     if (k === 'link_entrevista') k = 'link';
   if (k === 'estado_encuadre') k = 'estado';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
-    if (k === 'modalidad_entrevista_final') k = 'modalidad_entrevista';
     if (k === 'observaciones_bono') k = 'observaciones';
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
 
@@ -788,8 +798,9 @@ async function handleModalSave(e) {
       fechas_bono: original.fechas_bono ?? [],
       observaciones: original.observaciones ?? null,
       entregables: original.entregables ?? [],
-  efectividad: original.efectividad ?? null,
-  efectividad_final: original.efectividad_final ?? null,
+    efectividad: original.efectividad ?? null,
+    efectividad_final: original.efectividad_final ?? null,
+    tiro_blanco: original.tiro_blanco ?? [],
       modalidad_entrevista: original.modalidad_entrevista ?? null,
       observaciones_entregables: original.observaciones_entregables ?? null,
       fecha_codificacion: original.fecha_codificacion ?? null,
@@ -806,6 +817,17 @@ async function handleModalSave(e) {
       }
       if (k === 'status_efectividad_final') { // mapear a efectividad_final
         fullPayload.efectividad_final = (v === true || v === 'true');
+        continue;
+      }
+      if (kOrig === 'irritacion_bebe_primer_producto') { // mapear a irritaciones[0] booleana
+        const boolVal = (typeof v === 'string') ? /^(si|sí|true|1)$/i.test(v) : !!v;
+        const arrIrr = Array.isArray(fullPayload.irritaciones) ? fullPayload.irritaciones.slice() : [];
+        arrIrr[0] = boolVal;
+        fullPayload.irritaciones = arrIrr;
+        continue;
+      }
+      if (kOrig === 'modalidad_entrevista_final') { // alias a modalidad_entrevista backend
+        fullPayload.modalidad_entrevista = v;
         continue;
       }
       if (k === 'fecha_real_evaluacion_monadica') { // mapear a array fecha_monadica
@@ -864,10 +886,16 @@ async function handleModalSave(e) {
     // }
 
     // Combinar fecha_e_inicial con hora
+    function extractHour(dt){
+      if(!dt || typeof dt !== 'string') return null;
+      const m = dt.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : null;
+    }
     const uiHora = payloadReclutamientoPartial.hora; // puede existir si usuario cambió
     if (fullPayload.fecha_e_inicial) {
       let datePart = fullPayload.fecha_e_inicial.split('T')[0];
-      let hourPart = uiHora || '00:00';
+      let existingHour = extractHour(fullPayload.fecha_e_inicial);
+      let hourPart = uiHora || existingHour || '00:00';
       if (hourPart.length === 5) hourPart = hourPart + ':00';
       fullPayload.fecha_e_inicial = `${datePart}T${hourPart}Z`;
     }
@@ -876,7 +904,8 @@ async function handleModalSave(e) {
     const uiHoraFinal = payloadReclutamientoPartial.hora_final;
     if (fullPayload.fecha_final) {
       let datePart = fullPayload.fecha_final.split('T')[0];
-      let hourPart = uiHoraFinal || '00:00';
+      let existingHourF = extractHour(fullPayload.fecha_final);
+      let hourPart = uiHoraFinal || existingHourF || '00:00';
       if (hourPart.length === 5) hourPart = hourPart + ':00';
       fullPayload.fecha_final = `${datePart}T${hourPart}Z`;
     }
@@ -922,6 +951,27 @@ async function handleModalSave(e) {
     // Remover campos UI hora sueltos
     delete fullPayload.hora;
     delete fullPayload.hora_final;
+  delete fullPayload.modalidad_entrevista_final; // no lo espera backend
+
+    // Construir tiro_blanco a partir de calificaciones si cambiaron
+    if ('calificacion_tiro_blanco' in payloadReclutamientoPartial || 'calificacion_tiro_blanco_final' in payloadReclutamientoPartial) {
+      const arrOrig = Array.isArray(original.tiro_blanco) ? [...original.tiro_blanco] : (Array.isArray(fullPayload.tiro_blanco)? [...fullPayload.tiro_blanco]:[]);
+      if ('calificacion_tiro_blanco' in payloadReclutamientoPartial) {
+        const v = parseInt(payloadReclutamientoPartial.calificacion_tiro_blanco,10);
+        if(!isNaN(v)) arrOrig[0] = v; else arrOrig[0] = null;
+      }
+      if ('calificacion_tiro_blanco_final' in payloadReclutamientoPartial) {
+        const v2 = parseInt(payloadReclutamientoPartial.calificacion_tiro_blanco_final,10);
+        if(!isNaN(v2)) arrOrig[1] = v2; else arrOrig[1] = null;
+      }
+      // Limpiar nulls al final pero mantener posiciones si segunda existe
+      const cleaned = [];
+      if (arrOrig[0] != null) cleaned[0] = arrOrig[0];
+      if (arrOrig[1] != null) cleaned[1] = arrOrig[1];
+      fullPayload.tiro_blanco = cleaned;
+      delete fullPayload.calificacion_tiro_blanco;
+      delete fullPayload.calificacion_tiro_blanco_final;
+    }
 
     console.log('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
 

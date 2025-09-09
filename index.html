@@ -105,10 +105,6 @@
                 <div class="col-md-3"><label class="form-label">Teléfono 2<input class="form-control" data-field="telefono2" name="telefono2" type="number"></label></div>
                 <div class="col-md-3"><label class="form-label">Teléfono 3<input class="form-control" data-field="telefono3" name="telefono3" type="number"></label></div>
             </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label"></label></div>
-                <div class="col-md-3"><label class="form-label">¿Tiene pensado realizar un viaje en los próximos 2 meses del año?<input class="form-control" data-field="viaje_2meses" name="viaje_2meses" type="text"></label></div>
-            </div>
 
             <!-- Bloque: Datos del bebé -->
             <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Datos del bebé</h4>
@@ -172,7 +168,17 @@
                                 </label></div>
                 <div class="col-md-3"><label class="form-label"></label></div>
                 <div class="col-md-3"><label class="form-label">Tiempo entrevista inicial (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_inicial" name="tiempo_entrevista_inicial" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:15:00"></label></div>
-                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco inicial<input class="form-control" data-field="calificacion_tiro_blanco" name="calificacion_tiro_blanco" type="text"></label></div>
+                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco inicial
+                        <select class="form-select" data-field="calificacion_tiro_blanco" name="calificacion_tiro_blanco">
+                            <option value="">-</option>
+                            <option value=5>5</option>
+                            <option value=4>4</option>
+                            <option value=3>3</option>
+                            <option value=2>2</option>
+                            <option value=1>1</option>
+                        </select>
+                    </label>
+                </div>
             </div>
 
             <!-- Bloque: Entrega -->
@@ -201,7 +207,24 @@
                 <div class="col-md-3"><label class="form-label">Fecha ideal de evaluación monádica<input class="form-control" data-field="fecha_ideal_evaluacion_monadica" name="fecha_ideal_evaluacion_monadica" type="date"></label></div>
                 <div class="col-md-3"><label class="form-label">Fecha real de evaluación monádica<input class="form-control" data-field="fecha_real_evaluacion_monadica" name="fecha_real_evaluacion_monadica" type="date"></label></div>
                 <div class="col-md-4"><label class="form-label">Tiempo de evaluación monádica (HH:MM:SS)<input class="form-control" data-field="tiempo_evaluacion_monadica" name="tiempo_evaluacion_monadica" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:50:00"></label></div>
-                <div class="col-md-4"><label class="form-label">¿Su bebé presentó algún tipo de irritación con el uso de primer producto?<input class="form-control" data-field="irritacion_bebe_primer_producto" name="irritacion_bebe_primer_producto" type="text"></label></div>
+                <div class="col-md-4"><label class="form-label">¿Su bebé presentó algún tipo de irritación con el uso de primer producto?
+                    <select class="form-select" data-field="irritacion_bebe_primer_producto" name="irritacion_bebe_primer_producto">
+                        <option value="">-</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                </label>
+                </div>
+            </div>
+
+            <!-- Bloque: Cronograma Final -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Final</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal mínima entrevista final<input class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrevista final<input class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha entrevista final<input class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></label></div>
+                </label>
+                </div>
             </div>
 
             <!-- Bloque: Cronograma Final -->
@@ -220,16 +243,32 @@
                                         <option value="false">No</option>
                                     </select>
                                 </label></div>
-                <div class="col-md-3"><label class="form-label">Modalidad entrevista final<input class="form-control" data-field="modalidad_entrevista_final" name="modalidad_entrevista_final" type="text"></label></div>
+            <div class="col-md-3"><label class="form-label">Modalidad entrevista final
+                <select class="form-select" data-field="modalidad_entrevista_final" name="modalidad_entrevista_final">
+                    <option value="">-</option>
+                    <option value="VIRTUAL">Virtual</option>
+                    <option value="PRESENCIAL">Presencial</option>
+                </select>
+            </label>
+            </div>
                 <div class="col-md-4"><label class="form-label">Tiempo de entrevista final (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_final" name="tiempo_entrevista_final" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:00:00"></label></div>
-                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco final<input class="form-control" data-field="calificacion_tiro_blanco_final" name="calificacion_tiro_blanco_final" type="text"></label></div>
+                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco final
+                    <select class="form-select" data-field="calificacion_tiro_blanco_final" name="calificacion_tiro_blanco_final">
+                        <option value="">-</option>
+                        <option value=5>5</option>
+                        <option value=4>4</option>
+                        <option value=3>3</option>
+                        <option value=2>2</option>
+                        <option value=1>1</option>
+                    </select>
+                    </label>
+                </div>
             </div>
 
             <!-- Bloque: Restitución (Profesionales) -->
             <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Restitución (Profesionales)</h4>
             <div class="row g-3 mb-3">
                 <div class="col-md-3"><label class="form-label">Fecha ideal máxima<input class="form-control" data-field="fecha_ideal_maxima_restitucion" name="fecha_ideal_maxima_restitucion" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Restitución y entregables<input class="form-control" data-field="restitucion_entregables" name="restitucion_entregables" type="text"></label></div>
                 <div class="col-md-3"><label class="form-label">Fecha real restitución<input class="form-control" data-field="fecha_real_restitucion" name="fecha_real_restitucion" type="date"></label></div>
             </div>
 
