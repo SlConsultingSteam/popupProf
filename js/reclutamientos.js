@@ -710,7 +710,9 @@ async function handleModalSave(e) {
     "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
     "fecha_ideal_envio_admin","fecha_envio_real_admin",
   "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
-  "observaciones","observaciones_bono"
+  "observaciones","observaciones_bono",
+    // Añadidos backend para evitar warnings tras alias
+    "fecha_e_inicial","fecha_realizacion_p"
   ]);
 
   const payloadParticipante = {};
@@ -726,6 +728,9 @@ async function handleModalSave(e) {
     // Alias UI -> backend
     if (k === 'link_entrevista') k = 'link';
   if (k === 'estado_encuadre') k = 'estado';
+    // NUEVOS ALIAS para que las fechas se guarden correctamente
+    if (k === 'fecha_real') k = 'fecha_e_inicial';
+    if (k === 'fecha_realizacion_profesional') k = 'fecha_realizacion_p';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
     if (k === 'observaciones_bono') k = 'observaciones';
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
