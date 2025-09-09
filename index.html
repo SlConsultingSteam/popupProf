@@ -192,7 +192,14 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-2"><label class="form-label">Fecha<input class="form-control" data-field="fecha_recibo" name="fecha_recibo" type="date"></label></div>
                 <div class="col-md-3"><label class="form-label">Tiempo de estatus de recibo (HH:MM:SS)<input class="form-control" data-field="tiempo_estatus_recibo" name="tiempo_estatus_recibo" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:45:00"></label></div>
-                <div class="col-md-3"><label class="form-label">Confirmación verbal del consentimiento informado<input class="form-control" data-field="confirmacion_verbal" name="confirmacion_verbal" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">Confirmación verbal del consentimiento informado
+                    <select class="form-select" data-field="confirmacion_verbal" name="confirmacion_verbal">
+                        <option value="">-</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                    </label>
+                </div>
             </div>
 
             <!-- Bloque: Primera Muestra -->
@@ -213,16 +220,6 @@
                         <option value="true">Sí</option>
                         <option value="false">No</option>
                     </select>
-                </label>
-                </div>
-            </div>
-
-            <!-- Bloque: Cronograma Final -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Final</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha ideal mínima entrevista final<input class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrevista final<input class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha entrevista final<input class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></label></div>
                 </label>
                 </div>
             </div>
@@ -293,7 +290,7 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
         <script src="js/auth.js"></script>
         <script src="js/reclutamientos.js"></script>
-        <script>
+        <!-- <script>
         const token = sessionStorage.getItem("token");
         if (!token) {
             window.location.href = "login.html";
@@ -302,6 +299,6 @@
             sessionStorage.clear();
             window.location.href = "login.html";
         }
-        </script>
+        </script> -->
 </body>
 </html>

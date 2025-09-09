@@ -151,7 +151,8 @@ const fieldMapping = {
   fecha_entrega_producto: ["fecha_entrega_producto","fecha_despacho","fecha_despacho_0"],
   fecha_recibo: ["fecha_recibo"],
   tiempo_estatus_recibo: ["tiempo_estatus_recibo","tiempo_recibo"],
-  confirmacion_verbal: ["confirmacion_verbal"],
+  // confirmacion_verbal se mapea a consentimiento (bool en backend)
+  confirmacion_verbal: ["confirmacion_verbal","consentimiento"],
   fecha_ideal_inicio_muestra: ["fecha_ideal_inicio_muestra"],
   fecha_inicio_muestra: ["fecha_inicio_muestras","fecha_inicio_muestra_0"],
   fecha_ideal_seguimiento_uso: ["fecha_ideal_seguimiento_uso"],
@@ -580,11 +581,16 @@ function openReclutamientoModal(reclId) {
     }
     // Ajustes de tipo date/time (si backend devuelve '2025-09-05T00:00:00Z')
     // Selects booleanos
-    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(key)) {
+    if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(key)) {
       if (key === 'estado_encuadre') {
         if (val === 'OK' || val === true || val === 'true') input.value = 'true';
         else if (val === '' || val == null) input.value = '';
         else input.value = 'false';
+      } else if (key === 'confirmacion_verbal') {
+        // consentimiento boolean backend -> mostrar como 'true'/'false'
+        if (val === true || val === 'true') input.value = 'true';
+        else if (val === false || val === 'false') input.value = 'false';
+        else input.value = '';
       } else {
         if (val === true || val === 'true') input.value = 'true';
         else if (val === false || val === 'false') input.value = 'false';
@@ -713,7 +719,7 @@ async function handleModalSave(e) {
 
   Object.entries(changed).forEach(([origKey, val]) => {
     let k = origKey;
-    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(k)) {
+    if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
       if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
     }
 
@@ -725,7 +731,7 @@ async function handleModalSave(e) {
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
 
     // Normalizar intervalos
-    if (k.startsWith('tiempo_')) {
+  if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
       const norm = normalizeInterval(val);
       if (norm && INTERVAL_REGEX.test(norm)) {
         val = norm;
@@ -802,6 +808,7 @@ async function handleModalSave(e) {
     efectividad_final: original.efectividad_final ?? null,
     tiro_blanco: original.tiro_blanco ?? [],
       modalidad_entrevista: original.modalidad_entrevista ?? null,
+      consentimiento: original.consentimiento ?? null,
       observaciones_entregables: original.observaciones_entregables ?? null,
       fecha_codificacion: original.fecha_codificacion ?? null,
       descarte: original.descarte ?? null,
@@ -819,11 +826,25 @@ async function handleModalSave(e) {
         fullPayload.efectividad_final = (v === true || v === 'true');
         continue;
       }
+      if (kOrig === 'confirmacion_verbal') { // mapear a consentimiento bool
+        fullPayload.consentimiento = (v === true || v === 'true');
+        continue;
+      }
       if (kOrig === 'irritacion_bebe_primer_producto') { // mapear a irritaciones[0] booleana
         const boolVal = (typeof v === 'string') ? /^(si|sí|true|1)$/i.test(v) : !!v;
         const arrIrr = Array.isArray(fullPayload.irritaciones) ? fullPayload.irritaciones.slice() : [];
         arrIrr[0] = boolVal;
         fullPayload.irritaciones = arrIrr;
+        continue;
+      }
+      if (kOrig === 'tiempo_estatus_recibo') { // alias a tiempo_recibo
+        if (typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+          const parts = v.split(':').map(Number);
+          let totalSeconds = 0;
+          if (parts.length === 2) totalSeconds = parts[0]*3600 + parts[1]*60;
+          else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
+          fullPayload.tiempo_recibo = { Duration: totalSeconds * 1e9, Valid: true };
+        }
         continue;
       }
       if (kOrig === 'modalidad_entrevista_final') { // alias a modalidad_entrevista backend
