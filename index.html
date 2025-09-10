@@ -25,7 +25,7 @@
         </nav>
     </header>
     
-    <main>
+    <main class="container mt-4">
         <section id="formulario">
             <div class="titulo-gestion-efectivos d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h2 class="mb-0">Gestión de Participantes</h2>
@@ -68,226 +68,199 @@
 
     </main>
         <!-- Modal Popup -->
-        <div class="modal fade modal-custom" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="infoModalLabel">Detalle Participante / Reclutamiento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body" id="modalBodyContent">
-      </div>
+                <div class="modal fade modal-custom" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">Detalle Participante / Reclutamiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="modalBodyContent">
+                <!-- Se agrega padding horizontal -->
+                <div class="px-4 mx-auto w-75" id="modalBodyContentInner"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-morado">Guardar</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
         <!-- Formulario plantilla oculto para el popup -->
-        <form id="popupFormTemplate" style="display:none">
+    <form id="popupFormTemplate" style="display:none" class="p-3">
             <!-- Bloque: Datos sociodemográficos -->
-            <h4 class="fw-bold mt-1 mb-3" style="font-size:1.3rem; color:#8432c6;">Datos sociodemográficos</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Origen dato<input class="form-control" data-field="origen" name="origen" type="text"></label></div>
-                <div class="col-md-3"><label class="form-label">Nombre y Apellido<input class="form-control" data-field="nombre_apellido" name="nombre_apellido" type="text"></label></div>            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Cédula<input class="form-control" data-field="cedula" name="cedula" type="text"></label></div>
-                <div class="col-md-3"><label class="form-label">Nacionalidad<input class="form-control" data-field="nacionalidad" name="nacionalidad" type="text"></label></div>
-                <div class="col-md-1"><label class="form-label">Edad<input class="form-control" data-field="edad" name="edad" type="number"></label></div>
-                <div class="col-md-4"><label class="form-label">Dirección<input class="form-control" data-field="direccion" name="direccion" type="text"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                
-                <div class="col-md-3"><label class="form-label">Barrio<input class="form-control" data-field="barrio" name="barrio" type="text"></label></div>
-                <div class="col-md-3"><label class="form-label">NSE<input class="form-control" data-field="nse" name="nse" type="number"></label></div>
-                <div class="col-md-3"><label class="form-label">Correo electrónico<input class="form-control" data-field="correo" name="correo" type="email"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Teléfono 1<input class="form-control" data-field="telefono1" name="telefono1" type="number"></label></div>
-                <div class="col-md-3"><label class="form-label">Teléfono 2<input class="form-control" data-field="telefono2" name="telefono2" type="number"></label></div>
-                <div class="col-md-3"><label class="form-label">Teléfono 3<input class="form-control" data-field="telefono3" name="telefono3" type="number"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Datos sociodemográficos</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="origen" class="form-label">Origen dato</label><input id="origen" class="form-control" data-field="origen" name="origen" type="text"></div>
+                    <div class="col-md-4"><label for="nombre_apellido" class="form-label">Nombre y Apellido</label><input id="nombre_apellido" class="form-control" data-field="nombre_apellido" name="nombre_apellido" type="text"></div>
+                    <div class="col-md-4"><label for="cedula" class="form-label">Cédula</label><input id="cedula" class="form-control" data-field="cedula" name="cedula" type="text"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="nacionalidad" class="form-label">Nacionalidad</label><input id="nacionalidad" class="form-control" data-field="nacionalidad" name="nacionalidad" type="text"></div>
+                    <div class="col-md-4"><label for="edad" class="form-label">Edad</label><input id="edad" class="form-control" data-field="edad" name="edad" type="number"></div>
+                    <div class="col-md-4"><label for="direccion" class="form-label">Dirección</label><input id="direccion" class="form-control" data-field="direccion" name="direccion" type="text"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="barrio" class="form-label">Barrio</label><input id="barrio" class="form-control" data-field="barrio" name="barrio" type="text"></div>
+                    <div class="col-md-4"><label for="nse" class="form-label">NSE</label><input id="nse" class="form-control" data-field="nse" name="nse" type="number"></div>
+                    <div class="col-md-4"><label for="correo" class="form-label">Correo electrónico</label><input id="correo" class="form-control" data-field="correo" name="correo" type="email"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="telefono1" class="form-label">Teléfono 1</label><input id="telefono1" class="form-control" data-field="telefono1" name="telefono1" type="number"></div>
+                    <div class="col-md-4"><label for="telefono2" class="form-label">Teléfono 2</label><input id="telefono2" class="form-control" data-field="telefono2" name="telefono2" type="number"></div>
+                    <div class="col-md-4"><label for="telefono3" class="form-label">Teléfono 3</label><input id="telefono3" class="form-control" data-field="telefono3" name="telefono3" type="number"></div>
+                </div>
             </div>
 
             <!-- Bloque: Datos del bebé -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Datos del bebé</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Nombre del bebé<input class="form-control" data-field="bebe_nombre" name="bebe_nombre" type="text"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha de nacimiento del bebé<input class="form-control" data-field="bebe_nacimiento" name="bebe_nacimiento" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Edad del bebé (Meses)<input class="form-control" data-field="bebe_edad_meses" name="bebe_edad_meses" type="number"></label></div>
-                <div class="col-md-4"><label class="form-label">Sexo del bebé<input class="form-control" data-field="bebe_sexo" name="bebe_sexo" type="text"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Datos del bebé</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="bebe_nombre" class="form-label">Nombre del bebé</label><input id="bebe_nombre" class="form-control" data-field="bebe_nombre" name="bebe_nombre" type="text"></div>
+                    <div class="col-md-4"><label for="bebe_nacimiento" class="form-label">Fecha de nacimiento del bebé</label><input id="bebe_nacimiento" class="form-control" data-field="bebe_nacimiento" name="bebe_nacimiento" type="date"></div>
+                    <div class="col-md-4"><label for="bebe_edad_meses" class="form-label">Edad del bebé (Meses)</label><input id="bebe_edad_meses" class="form-control" data-field="bebe_edad_meses" name="bebe_edad_meses" type="number"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="bebe_sexo" class="form-label">Sexo del bebé</label><input id="bebe_sexo" class="form-control" data-field="bebe_sexo" name="bebe_sexo" type="text"></div>
+                </div>
             </div>
 
             <!-- Bloque: Crema antipañalitis -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Crema antipañalitis</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-4"><label class="form-label">Marca habitual<input class="form-control" data-field="crema_marca" name="crema_marca" type="text"></label></div>
-                <div class="col-md-4"><label class="form-label">Frecuencia de días a la semana<input class="form-control" data-field="crema_frecuencia" name="crema_frecuencia" type="number"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-4"><label class="form-label">¿Utiliza otra marca y/o referencia de crema antipañalitis para su bebé? SI/NO<input class="form-control" data-field="otra_crema_si_no" name="otra_crema_si_no" type="text"></label></div>
-                <div class="col-md-4"><label class="form-label">¿Cuál es la otra Marca y/o Referencia?<input class="form-control" data-field="otra_crema_marca" name="otra_crema_marca" type="text"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Marca y Referencia<input class="form-control" data-field="otra_crema_marca_referencia" name="otra_crema_marca_referencia" type="text"></label></div>
-                <div class="col-md-3"><label class="form-label">Razones de uso de esta crema<input class="form-control" data-field="otra_crema_razones" name="otra_crema_razones" type="text"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Frecuencia de días a la semana de uso de esa otra crema<input class="form-control" data-field="otra_crema_frecuencia" name="otra_crema_frecuencia" type="number"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Crema antipañalitis</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="crema_marca" class="form-label">Marca habitual</label><input id="crema_marca" class="form-control" data-field="crema_marca" name="crema_marca" type="text"></div>
+                    <div class="col-md-4"><label for="crema_frecuencia" class="form-label">Frecuencia de días a la semana</label><input id="crema_frecuencia" class="form-control" data-field="crema_frecuencia" name="crema_frecuencia" type="number"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="otra_crema_si_no" class="form-label">¿Utiliza otra marca y/o referencia de crema antipañalitis para su bebé? SI/NO</label><input id="otra_crema_si_no" class="form-control" data-field="otra_crema_si_no" name="otra_crema_si_no" type="text"></div>
+                    <div class="col-md-4"><label for="otra_crema_marca" class="form-label">¿Cuál es la otra Marca y/o Referencia?</label><input id="otra_crema_marca" class="form-control" data-field="otra_crema_marca" name="otra_crema_marca" type="text"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="otra_crema_marca_referencia" class="form-label">Marca y Referencia</label><input id="otra_crema_marca_referencia" class="form-control" data-field="otra_crema_marca_referencia" name="otra_crema_marca_referencia" type="text"></div>
+                    <div class="col-md-4"><label for="otra_crema_razones" class="form-label">Razones de uso de esta crema</label><input id="otra_crema_razones" class="form-control" data-field="otra_crema_razones" name="otra_crema_razones" type="text"></div>
+                    <div class="col-md-4"><label for="otra_crema_frecuencia" class="form-label">Frecuencia de días a la semana de uso de esa otra crema</label><input id="otra_crema_frecuencia" class="form-control" data-field="otra_crema_frecuencia" name="otra_crema_frecuencia" type="number"></div>
+                </div>
             </div>
 
             <!-- Bloque: Estatus de Encuadre -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Estatus de Encuadre</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha de asignación Gestora<input class="form-control" data-field="fecha_asignacion_gestora" name="fecha_asignacion_gestora" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha de asignación (Supervisora/Analista)<input class="form-control" data-field="fecha_asignacion_supervisora" name="fecha_asignacion_supervisora" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha de realización (Profesional)<input class="form-control" data-field="fecha_realizacion_profesional" name="fecha_realizacion_profesional" type="date"></label></div>
-                                <div class="col-md-3"><label class="form-label">Estado
-                                    <select class="form-select" data-field="estado_encuadre" name="estado_encuadre">
-                                        <option value="">-</option>
-                                        <option value="true">Sí</option>
-                                        <option value="false">No</option>
-                                    </select>
-                                </label></div>
-                <div class="col-md-3"><label class="form-label">Tiempo Estatus Encuadre (HH:MM:SS)<input class="form-control" data-field="tiempo_estatus_encuadre" name="tiempo_estatus_encuadre" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:30:00"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Estatus de Encuadre</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="fecha_asignacion_gestora" class="form-label">Fecha de asignación Gestora</label><input id="fecha_asignacion_gestora" class="form-control" data-field="fecha_asignacion_gestora" name="fecha_asignacion_gestora" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_asignacion_supervisora" class="form-label">Fecha de asignación (Supervisora/Analista)</label><input id="fecha_asignacion_supervisora" class="form-control" data-field="fecha_asignacion_supervisora" name="fecha_asignacion_supervisora" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_realizacion_profesional" class="form-label">Fecha de realización (Profesional)</label><input id="fecha_realizacion_profesional" class="form-control" data-field="fecha_realizacion_profesional" name="fecha_realizacion_profesional" type="date"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6"><label for="estado_encuadre" class="form-label">Estado</label><select id="estado_encuadre" class="form-select" data-field="estado_encuadre" name="estado_encuadre"><option value="">-</option><option value="true">Sí</option><option value="false">No</option></select></div>
+                    <div class="col-md-6"><label for="tiempo_estatus_encuadre" class="form-label">Tiempo Estatus Encuadre (HH:MM:SS)</label><input id="tiempo_estatus_encuadre" class="form-control" data-field="tiempo_estatus_encuadre" name="tiempo_estatus_encuadre" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:30:00"></div>
+                </div>
             </div>
 
             <!-- Bloque: Cronograma Entrevista Inicial -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Entrevista Inicial</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-2"><label class="form-label">Fecha ideal mínima<input class="form-control" data-field="fecha_ideal_min" name="fecha_ideal_min" type="date"></label></div>
-                <div class="col-md-2"><label class="form-label">Fecha ideal máxima<input class="form-control" data-field="fecha_ideal_max" name="fecha_ideal_max" type="date"></label></div>
-                <div class="col-md-2"><label class="form-label">Fecha real<input class="form-control" data-field="fecha_real" name="fecha_real" type="date"></label></div>
-                <div class="col-md-2"><label class="form-label">Hora<input class="form-control" data-field="hora" name="hora" type="time"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Link entrevista<input class="form-control" data-field="link_entrevista" name="link_entrevista" type="url"></label></div>
-                                <div class="col-md-3"><label class="form-label">Efectividad
-                                    <select class="form-select" data-field="efectividad" name="efectividad">
-                                        <option value="">-</option>
-                                        <option value="true">Sí</option>
-                                        <option value="false">No</option>
-                                    </select>
-                                </label></div>
-                <div class="col-md-3"><label class="form-label"></label></div>
-                <div class="col-md-3"><label class="form-label">Tiempo entrevista inicial (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_inicial" name="tiempo_entrevista_inicial" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:15:00"></label></div>
-                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco inicial
-                        <select class="form-select" data-field="calificacion_tiro_blanco" name="calificacion_tiro_blanco">
-                            <option value="">-</option>
-                            <option value=5>5</option>
-                            <option value=4>4</option>
-                            <option value=3>3</option>
-                            <option value=2>2</option>
-                            <option value=1>1</option>
-                        </select>
-                    </label>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Cronograma Entrevista Inicial</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-3"><label for="fecha_ideal_min" class="form-label">Fecha ideal mínima</label><input id="fecha_ideal_min" class="form-control" data-field="fecha_ideal_min" name="fecha_ideal_min" type="date"></div>
+                    <div class="col-md-3"><label for="fecha_ideal_max" class="form-label">Fecha ideal máxima</label><input id="fecha_ideal_max" class="form-control" data-field="fecha_ideal_max" name="fecha_ideal_max" type="date"></div>
+                    <div class="col-md-3"><label for="fecha_real" class="form-label">Fecha real</label><input id="fecha_real" class="form-control" data-field="fecha_real" name="fecha_real" type="date"></div>
+                    <div class="col-md-3"><label for="hora" class="form-label">Hora</label><input id="hora" class="form-control" data-field="hora" name="hora" type="time"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4"><label for="link_entrevista" class="form-label">Link entrevista</label><input id="link_entrevista" class="form-control" data-field="link_entrevista" name="link_entrevista" type="url"></div>
+                    <div class="col-md-4"><label for="efectividad" class="form-label">Efectividad</label><select id="efectividad" class="form-select" data-field="efectividad" name="efectividad"><option value="">-</option><option value="true">Sí</option><option value="false">No</option></select></div>
+                    <div class="col-md-4"><label for="tiempo_entrevista_inicial" class="form-label">Tiempo entrevista inicial (HH:MM:SS)</label><input id="tiempo_entrevista_inicial" class="form-control" data-field="tiempo_entrevista_inicial" name="tiempo_entrevista_inicial" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:15:00"></div>
+                    <div class="col-md-4"><label for="calificacion_tiro_blanco" class="form-label">Calificación tiro al blanco inicial</label><select id="calificacion_tiro_blanco" class="form-select" data-field="calificacion_tiro_blanco" name="calificacion_tiro_blanco"><option value="">-</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
                 </div>
             </div>
 
             <!-- Bloque: Entrega -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Entrega</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-4"><label class="form-label">Fecha de entrega de producto<input class="form-control" data-field="fecha_entrega_producto" name="fecha_entrega_producto" type="date"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Entrega</h4>
+                <div class="row g-3">
+                    <div class="col-md-4"><label for="fecha_entrega_producto" class="form-label">Fecha de entrega de producto</label><input id="fecha_entrega_producto" class="form-control" data-field="fecha_entrega_producto" name="fecha_entrega_producto" type="date"></div>
+                </div>
             </div>
 
             <!-- Bloque: Estatus de Recibo -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Estatus de Recibo</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-2"><label class="form-label">Fecha<input class="form-control" data-field="fecha_recibo" name="fecha_recibo" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Tiempo de estatus de recibo (HH:MM:SS)<input class="form-control" data-field="tiempo_estatus_recibo" name="tiempo_estatus_recibo" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:45:00"></label></div>
-                <div class="col-md-3"><label class="form-label">Confirmación verbal del consentimiento informado
-                    <select class="form-select" data-field="confirmacion_verbal" name="confirmacion_verbal">
-                        <option value="">-</option>
-                        <option value="true">Sí</option>
-                        <option value="false">No</option>
-                    </select>
-                    </label>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Estatus de Recibo</h4>
+                <div class="row g-3">
+                    <div class="col-md-4"><label for="fecha_recibo" class="form-label">Fecha</label><input id="fecha_recibo" class="form-control" data-field="fecha_recibo" name="fecha_recibo" type="date"></div>
+                    <div class="col-md-4"><label for="tiempo_estatus_recibo" class="form-label">Tiempo de estatus de recibo (HH:MM:SS)</label><input id="tiempo_estatus_recibo" class="form-control" data-field="tiempo_estatus_recibo" name="tiempo_estatus_recibo" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:45:00"></div>
+                    <div class="col-md-4"><label for="confirmacion_verbal" class="form-label">Confirmación verbal del consentimiento informado</label><select id="confirmacion_verbal" class="form-select" data-field="confirmacion_verbal" name="confirmacion_verbal"><option value="">-</option><option value="true">Sí</option><option value="false">No</option></select></div>
                 </div>
             </div>
 
             <!-- Bloque: Primera Muestra -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Primera Muestra</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha ideal inicio muestra<input class="form-control" data-field="fecha_ideal_inicio_muestra" name="fecha_ideal_inicio_muestra" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha inicio muestra<input class="form-control" data-field="fecha_inicio_muestra" name="fecha_inicio_muestra" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha ideal seguimiento al uso<input class="form-control" data-field="fecha_ideal_seguimiento_uso" name="fecha_ideal_seguimiento_uso" type="date"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha de seguimiento real al uso<input class="form-control" data-field="fecha_seguimiento_real_uso" name="fecha_seguimiento_real_uso" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha ideal de evaluación monádica<input class="form-control" data-field="fecha_ideal_evaluacion_monadica" name="fecha_ideal_evaluacion_monadica" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha real de evaluación monádica<input class="form-control" data-field="fecha_real_evaluacion_monadica" name="fecha_real_evaluacion_monadica" type="date"></label></div>
-                <div class="col-md-4"><label class="form-label">Tiempo de evaluación monádica (HH:MM:SS)<input class="form-control" data-field="tiempo_evaluacion_monadica" name="tiempo_evaluacion_monadica" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:50:00"></label></div>
-                <div class="col-md-4"><label class="form-label">¿Su bebé presentó algún tipo de irritación con el uso de primer producto?
-                    <select class="form-select" data-field="irritacion_bebe_primer_producto" name="irritacion_bebe_primer_producto">
-                        <option value="">-</option>
-                        <option value="true">Sí</option>
-                        <option value="false">No</option>
-                    </select>
-                </label>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Primera Muestra</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="fecha_ideal_inicio_muestra" class="form-label">Fecha ideal inicio muestra</label><input id="fecha_ideal_inicio_muestra" class="form-control" data-field="fecha_ideal_inicio_muestra" name="fecha_ideal_inicio_muestra" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_inicio_muestra" class="form-label">Fecha inicio muestra</label><input id="fecha_inicio_muestra" class="form-control" data-field="fecha_inicio_muestra" name="fecha_inicio_muestra" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_ideal_seguimiento_uso" class="form-label">Fecha ideal seguimiento al uso</label><input id="fecha_ideal_seguimiento_uso" class="form-control" data-field="fecha_ideal_seguimiento_uso" name="fecha_ideal_seguimiento_uso" type="date"></div>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="fecha_seguimiento_real_uso" class="form-label">Fecha de seguimiento real al uso</label><input id="fecha_seguimiento_real_uso" class="form-control" data-field="fecha_seguimiento_real_uso" name="fecha_seguimiento_real_uso" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_ideal_evaluacion_monadica" class="form-label">Fecha ideal de evaluación monádica</label><input id="fecha_ideal_evaluacion_monadica" class="form-control" data-field="fecha_ideal_evaluacion_monadica" name="fecha_ideal_evaluacion_monadica" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_real_evaluacion_monadica" class="form-label">Fecha real de evaluación monádica</label><input id="fecha_real_evaluacion_monadica" class="form-control" data-field="fecha_real_evaluacion_monadica" name="fecha_real_evaluacion_monadica" type="date"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6"><label for="tiempo_evaluacion_monadica" class="form-label">Tiempo de evaluación monádica (HH:MM:SS)</label><input id="tiempo_evaluacion_monadica" class="form-control" data-field="tiempo_evaluacion_monadica" name="tiempo_evaluacion_monadica" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:50:00"></div>
+                    <div class="col-md-6"><label for="irritacion_bebe_primer_producto" class="form-label">¿Su bebé presentó algún tipo de irritación con el uso de primer producto?</label><select id="irritacion_bebe_primer_producto" class="form-select" data-field="irritacion_bebe_primer_producto" name="irritacion_bebe_primer_producto"><option value="">-</option><option value="true">Sí</option><option value="false">No</option></select></div>
                 </div>
             </div>
 
             <!-- Bloque: Cronograma Final -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Final</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha ideal mínima entrevista final<input class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrevista final<input class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha entrevista final<input class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></label></div>
-            </div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Hora<input class="form-control" data-field="hora_final" name="hora_final" type="time"></label></div>
-                                <div class="col-md-3"><label class="form-label">Status efectividad
-                                    <select class="form-select" data-field="status_efectividad_final" name="status_efectividad_final">
-                                        <option value="">-</option>
-                                        <option value="true">Sí</option>
-                                        <option value="false">No</option>
-                                    </select>
-                                </label></div>
-            <div class="col-md-3"><label class="form-label">Modalidad entrevista final
-                <select class="form-select" data-field="modalidad_entrevista_final" name="modalidad_entrevista_final">
-                    <option value="">-</option>
-                    <option value="VIRTUAL">Virtual</option>
-                    <option value="PRESENCIAL">Presencial</option>
-                </select>
-            </label>
-            </div>
-                <div class="col-md-4"><label class="form-label">Tiempo de entrevista final (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_final" name="tiempo_entrevista_final" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:00:00"></label></div>
-                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco final
-                    <select class="form-select" data-field="calificacion_tiro_blanco_final" name="calificacion_tiro_blanco_final">
-                        <option value="">-</option>
-                        <option value=5>5</option>
-                        <option value=4>4</option>
-                        <option value=3>3</option>
-                        <option value=2>2</option>
-                        <option value=1>1</option>
-                    </select>
-                    </label>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Cronograma Final</h4>
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4"><label for="fecha_ideal_min_final" class="form-label">Fecha ideal mínima entrevista final</label><input id="fecha_ideal_min_final" class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_ideal_max_final" class="form-label">Fecha ideal máxima entrevista final</label><input id="fecha_ideal_max_final" class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_entrevista_final" class="form-label">Fecha entrevista final</label><input id="fecha_entrevista_final" class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3"><label for="hora_final" class="form-label">Hora</label><input id="hora_final" class="form-control" data-field="hora_final" name="hora_final" type="time"></div>
+                    <div class="col-md-3"><label for="status_efectividad_final" class="form-label">Status efectividad</label><select id="status_efectividad_final" class="form-select" data-field="status_efectividad_final" name="status_efectividad_final"><option value="">-</option><option value="true">Sí</option><option value="false">No</option></select></div>
+                    <div class="col-md-3"><label for="modalidad_entrevista_final" class="form-label">Modalidad entrevista final</label><select id="modalidad_entrevista_final" class="form-select" data-field="modalidad_entrevista_final" name="modalidad_entrevista_final"><option value="">-</option><option value="VIRTUAL">Virtual</option><option value="PRESENCIAL">Presencial</option></select></div>
+                    <div class="col-md-3"><label for="tiempo_entrevista_final" class="form-label">Tiempo de entrevista final (HH:MM:SS)</label><input id="tiempo_entrevista_final" class="form-control" data-field="tiempo_entrevista_final" name="tiempo_entrevista_final" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:00:00"></div>
+                    <div class="col-md-4"><label for="calificacion_tiro_blanco_final" class="form-label">Calificación tiro al blanco final</label><select id="calificacion_tiro_blanco_final" class="form-select" data-field="calificacion_tiro_blanco_final" name="calificacion_tiro_blanco_final"><option value="">-</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></div>
                 </div>
             </div>
 
             <!-- Bloque: Restitución (Profesionales) -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Restitución (Profesionales)</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha ideal máxima<input class="form-control" data-field="fecha_ideal_maxima_restitucion" name="fecha_ideal_maxima_restitucion" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha real restitución<input class="form-control" data-field="fecha_real_restitucion" name="fecha_real_restitucion" type="date"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Restitución (Profesionales)</h4>
+                <div class="row g-3">
+                    <div class="col-md-6"><label for="fecha_ideal_maxima_restitucion" class="form-label">Fecha ideal máxima</label><input id="fecha_ideal_maxima_restitucion" class="form-control" data-field="fecha_ideal_maxima_restitucion" name="fecha_ideal_maxima_restitucion" type="date"></div>
+                    <div class="col-md-6"><label for="fecha_real_restitucion" class="form-label">Fecha real restitución</label><input id="fecha_real_restitucion" class="form-control" data-field="fecha_real_restitucion" name="fecha_real_restitucion" type="date"></div>
+                </div>
             </div>
 
             <!-- Bloque: Bono -->
-            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Bono</h4>
-            <div class="row g-3 mb-3">
-                <div class="col-md-3"><label class="form-label">Fecha ideal de envío a administración (Supervisora)<input class="form-control" data-field="fecha_ideal_envio_admin" name="fecha_ideal_envio_admin" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha de envío real a administración (Supervisora)<input class="form-control" data-field="fecha_envio_real_admin" name="fecha_envio_real_admin" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrega bono (Administración)<input class="form-control" data-field="fecha_ideal_maxima_entrega_bono" name="fecha_ideal_maxima_entrega_bono" type="date"></label></div>
-                <div class="col-md-3"><label class="form-label">Fecha real entrega bono (Administración)<input class="form-control" data-field="fecha_real_entrega_bono" name="fecha_real_entrega_bono" type="date"></label></div>
+            <div class="card mb-4 p-3 shadow-sm border-0">
+                <h4 class="form-section-title">Bono</h4>
+                <div class="row g-3">
+                    <div class="col-md-4"><label for="fecha_ideal_envio_admin" class="form-label">Fecha ideal de envío a administración (Supervisora)</label><input id="fecha_ideal_envio_admin" class="form-control" data-field="fecha_ideal_envio_admin" name="fecha_ideal_envio_admin" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_envio_real_admin" class="form-label">Fecha de envío real a administración (Supervisora)</label><input id="fecha_envio_real_admin" class="form-control" data-field="fecha_envio_real_admin" name="fecha_envio_real_admin" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_ideal_maxima_entrega_bono" class="form-label">Fecha ideal máxima entrega bono (Administración)</label><input id="fecha_ideal_maxima_entrega_bono" class="form-control" data-field="fecha_ideal_maxima_entrega_bono" name="fecha_ideal_maxima_entrega_bono" type="date"></div>
+                    <div class="col-md-4"><label for="fecha_real_entrega_bono" class="form-label">Fecha real entrega bono (Administración)</label><input id="fecha_real_entrega_bono" class="form-control" data-field="fecha_real_entrega_bono" name="fecha_real_entrega_bono" type="date"></div>
+                </div>
             </div>
-            <div class="col-md-8">
-                <label class="form-label" for="observaciones_bono">Observaciones</label>
-                <textarea class="form-control" id="observaciones_bono" data-field="observaciones_bono" name="observaciones_bono" rows="3" style="height:auto;"></textarea>
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label" for="observaciones_bono">Observaciones</label>
+                    <textarea class="form-control" id="observaciones_bono" data-field="observaciones_bono" name="observaciones_bono" rows="3"></textarea>
+                </div>
             </div>
-            <div class="d-flex justify-content-center mt-3">
-                <button type="submit" class="btn btn-morado">Guardar</button>
+            <div class="d-flex justify-content-center mt-4">
+                <!-- El botón Guardar ahora está en la modal-footer -->
             </div>
         </form>
 
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
         <script src="js/auth.js"></script>
         <script src="js/reclutamientos.js"></script>
 </body>

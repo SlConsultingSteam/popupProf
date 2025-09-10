@@ -1,0 +1,1411 @@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+    
+      <main>
+        <section id="formulario">
+            <div class="titulo-gestion-efectivos d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h2 class="mb-0">Gestión de Participantes</h2>
+                <div class="d-flex align-items-center" role="search">
+                    <input type="text" class="form-control" id="filter-nombre" name="filter-nombre" placeholder="Filtrar">
+                </div>
+            </div>
+           
+            <div class="gestion-efectivos-layout">
+                <!-- Contenido principal (centro) -->
+                <main class="contenido-principal">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Proyecto</th>
+                                <th>Ciudad</th>
+                                <th>Encuadre</th>
+                                <th>Inicial</th>
+                                <th>Monadica</th>
+                                <th>Final</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-body">
+                            <!-- <tr class="user-row" onclick="showPopup(0)">
+                                <td>Sebastian Granada</td>
+                                <td>3188901674</td>
+                                <td>Proyecto</td>
+                                <td>Cali</td>
+                                <td>Hecho</td>
+                                <td>Pendiente</td>
+                                <td>Pendiente</td>
+                            </tr> -->
+                        </tbody>
+                    </table>
+                </main> 
+            </div>
+        </section>
+
+    </main>
+        <!-- Modal Popup -->
+        <div class="modal fade modal-custom" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="infoModalLabel">Detalle Participante / Reclutamiento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="modalBodyContent">
+      </div>
+    </div>
+  </div>
+</div>
+
+        <!-- Formulario plantilla oculto para el popup -->
+        <form id="popupFormTemplate" style="display:none">
+            <!-- Bloque: Datos sociodemográficos -->
+            <h4 class="fw-bold mt-1 mb-3" style="font-size:1.3rem; color:#8432c6;">Datos sociodemográficos</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Origen dato<input class="form-control" data-field="origen" name="origen" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">Nombre y Apellido<input class="form-control" data-field="nombre_apellido" name="nombre_apellido" type="text"></label></div>            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Cédula<input class="form-control" data-field="cedula" name="cedula" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">Nacionalidad<input class="form-control" data-field="nacionalidad" name="nacionalidad" type="text"></label></div>
+                <div class="col-md-1"><label class="form-label">Edad<input class="form-control" data-field="edad" name="edad" type="number"></label></div>
+                <div class="col-md-4"><label class="form-label">Dirección<input class="form-control" data-field="direccion" name="direccion" type="text"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                
+                <div class="col-md-3"><label class="form-label">Barrio<input class="form-control" data-field="barrio" name="barrio" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">NSE<input class="form-control" data-field="nse" name="nse" type="number"></label></div>
+                <div class="col-md-3"><label class="form-label">Correo electrónico<input class="form-control" data-field="correo" name="correo" type="email"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Teléfono 1<input class="form-control" data-field="telefono1" name="telefono1" type="number"></label></div>
+                <div class="col-md-3"><label class="form-label">Teléfono 2<input class="form-control" data-field="telefono2" name="telefono2" type="number"></label></div>
+                <div class="col-md-3"><label class="form-label">Teléfono 3<input class="form-control" data-field="telefono3" name="telefono3" type="number"></label></div>
+            </div>
+
+            <!-- Bloque: Datos del bebé -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Datos del bebé</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Nombre del bebé<input class="form-control" data-field="bebe_nombre" name="bebe_nombre" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha de nacimiento del bebé<input class="form-control" data-field="bebe_nacimiento" name="bebe_nacimiento" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Edad del bebé (Meses)<input class="form-control" data-field="bebe_edad_meses" name="bebe_edad_meses" type="number"></label></div>
+                <div class="col-md-4"><label class="form-label">Sexo del bebé<input class="form-control" data-field="bebe_sexo" name="bebe_sexo" type="text"></label></div>
+            </div>
+
+            <!-- Bloque: Crema antipañalitis -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Crema antipañalitis</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><label class="form-label">Marca habitual<input class="form-control" data-field="crema_marca" name="crema_marca" type="text"></label></div>
+                <div class="col-md-4"><label class="form-label">Frecuencia de días a la semana<input class="form-control" data-field="crema_frecuencia" name="crema_frecuencia" type="number"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><label class="form-label">¿Utiliza otra marca y/o referencia de crema antipañalitis para su bebé? SI/NO<input class="form-control" data-field="otra_crema_si_no" name="otra_crema_si_no" type="text"></label></div>
+                <div class="col-md-4"><label class="form-label">¿Cuál es la otra Marca y/o Referencia?<input class="form-control" data-field="otra_crema_marca" name="otra_crema_marca" type="text"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Marca y Referencia<input class="form-control" data-field="otra_crema_marca_referencia" name="otra_crema_marca_referencia" type="text"></label></div>
+                <div class="col-md-3"><label class="form-label">Razones de uso de esta crema<input class="form-control" data-field="otra_crema_razones" name="otra_crema_razones" type="text"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Frecuencia de días a la semana de uso de esa otra crema<input class="form-control" data-field="otra_crema_frecuencia" name="otra_crema_frecuencia" type="number"></label></div>
+            </div>
+
+            <!-- Bloque: Estatus de Encuadre -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Estatus de Encuadre</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha de asignación Gestora<input class="form-control" data-field="fecha_asignacion_gestora" name="fecha_asignacion_gestora" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha de asignación (Supervisora/Analista)<input class="form-control" data-field="fecha_asignacion_supervisora" name="fecha_asignacion_supervisora" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha de realización (Profesional)<input class="form-control" data-field="fecha_realizacion_profesional" name="fecha_realizacion_profesional" type="date"></label></div>
+                                <div class="col-md-3"><label class="form-label">Estado
+                                    <select class="form-select" data-field="estado_encuadre" name="estado_encuadre">
+                                        <option value="">-</option>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </label></div>
+                <div class="col-md-3"><label class="form-label">Tiempo Estatus Encuadre (HH:MM:SS)<input class="form-control" data-field="tiempo_estatus_encuadre" name="tiempo_estatus_encuadre" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:30:00"></label></div>
+            </div>
+
+            <!-- Bloque: Cronograma Entrevista Inicial -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Entrevista Inicial</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-2"><label class="form-label">Fecha ideal mínima<input class="form-control" data-field="fecha_ideal_min" name="fecha_ideal_min" type="date"></label></div>
+                <div class="col-md-2"><label class="form-label">Fecha ideal máxima<input class="form-control" data-field="fecha_ideal_max" name="fecha_ideal_max" type="date"></label></div>
+                <div class="col-md-2"><label class="form-label">Fecha real<input class="form-control" data-field="fecha_real" name="fecha_real" type="date"></label></div>
+                <div class="col-md-2"><label class="form-label">Hora<input class="form-control" data-field="hora" name="hora" type="time"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Link entrevista<input class="form-control" data-field="link_entrevista" name="link_entrevista" type="url"></label></div>
+                                <div class="col-md-3"><label class="form-label">Efectividad
+                                    <select class="form-select" data-field="efectividad" name="efectividad">
+                                        <option value="">-</option>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </label></div>
+                <div class="col-md-3"><label class="form-label"></label></div>
+                <div class="col-md-3"><label class="form-label">Tiempo entrevista inicial (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_inicial" name="tiempo_entrevista_inicial" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:15:00"></label></div>
+                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco inicial
+                        <select class="form-select" data-field="calificacion_tiro_blanco" name="calificacion_tiro_blanco">
+                            <option value="">-</option>
+                            <option value=5>5</option>
+                            <option value=4>4</option>
+                            <option value=3>3</option>
+                            <option value=2>2</option>
+                            <option value=1>1</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Bloque: Entrega -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Entrega</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><label class="form-label">Fecha de entrega de producto<input class="form-control" data-field="fecha_entrega_producto" name="fecha_entrega_producto" type="date"></label></div>
+            </div>
+
+            <!-- Bloque: Estatus de Recibo -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Estatus de Recibo</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-2"><label class="form-label">Fecha<input class="form-control" data-field="fecha_recibo" name="fecha_recibo" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Tiempo de estatus de recibo (HH:MM:SS)<input class="form-control" data-field="tiempo_estatus_recibo" name="tiempo_estatus_recibo" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:45:00"></label></div>
+                <div class="col-md-3"><label class="form-label">Confirmación verbal del consentimiento informado<input class="form-control" data-field="confirmacion_verbal" name="confirmacion_verbal" type="text"></label></div>
+            </div>
+
+            <!-- Bloque: Primera Muestra -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Primera Muestra</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal inicio muestra<input class="form-control" data-field="fecha_ideal_inicio_muestra" name="fecha_ideal_inicio_muestra" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha inicio muestra<input class="form-control" data-field="fecha_inicio_muestra" name="fecha_inicio_muestra" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal seguimiento al uso<input class="form-control" data-field="fecha_ideal_seguimiento_uso" name="fecha_ideal_seguimiento_uso" type="date"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha de seguimiento real al uso<input class="form-control" data-field="fecha_seguimiento_real_uso" name="fecha_seguimiento_real_uso" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal de evaluación monádica<input class="form-control" data-field="fecha_ideal_evaluacion_monadica" name="fecha_ideal_evaluacion_monadica" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha real de evaluación monádica<input class="form-control" data-field="fecha_real_evaluacion_monadica" name="fecha_real_evaluacion_monadica" type="date"></label></div>
+                <div class="col-md-4"><label class="form-label">Tiempo de evaluación monádica (HH:MM:SS)<input class="form-control" data-field="tiempo_evaluacion_monadica" name="tiempo_evaluacion_monadica" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="00:50:00"></label></div>
+                <div class="col-md-4"><label class="form-label">¿Su bebé presentó algún tipo de irritación con el uso de primer producto?
+                    <select class="form-select" data-field="irritacion_bebe_primer_producto" name="irritacion_bebe_primer_producto">
+                        <option value="">-</option>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                </label>
+                </div>
+            </div>
+
+            <!-- Bloque: Cronograma Final -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Final</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal mínima entrevista final<input class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrevista final<input class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha entrevista final<input class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></label></div>
+                </label>
+                </div>
+            </div>
+
+            <!-- Bloque: Cronograma Final -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Cronograma Final</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal mínima entrevista final<input class="form-control" data-field="fecha_ideal_min_final" name="fecha_ideal_min_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrevista final<input class="form-control" data-field="fecha_ideal_max_final" name="fecha_ideal_max_final" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha entrevista final<input class="form-control" data-field="fecha_entrevista_final" name="fecha_entrevista_final" type="date"></label></div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Hora<input class="form-control" data-field="hora_final" name="hora_final" type="time"></label></div>
+                                <div class="col-md-3"><label class="form-label">Status efectividad
+                                    <select class="form-select" data-field="status_efectividad_final" name="status_efectividad_final">
+                                        <option value="">-</option>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </label></div>
+            <div class="col-md-3"><label class="form-label">Modalidad entrevista final
+                <select class="form-select" data-field="modalidad_entrevista_final" name="modalidad_entrevista_final">
+                    <option value="">-</option>
+                    <option value="VIRTUAL">Virtual</option>
+                    <option value="PRESENCIAL">Presencial</option>
+                </select>
+            </label>
+            </div>
+                <div class="col-md-4"><label class="form-label">Tiempo de entrevista final (HH:MM:SS)<input class="form-control" data-field="tiempo_entrevista_final" name="tiempo_entrevista_final" type="text" pattern="^\d{1,3}:\d{2}(:\d{2})?$" placeholder="01:00:00"></label></div>
+                <div class="col-md-4"><label class="form-label">Calificación tiro al blanco final
+                    <select class="form-select" data-field="calificacion_tiro_blanco_final" name="calificacion_tiro_blanco_final">
+                        <option value="">-</option>
+                        <option value=5>5</option>
+                        <option value=4>4</option>
+                        <option value=3>3</option>
+                        <option value=2>2</option>
+                        <option value=1>1</option>
+                    </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Bloque: Restitución (Profesionales) -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Restitución (Profesionales)</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal máxima<input class="form-control" data-field="fecha_ideal_maxima_restitucion" name="fecha_ideal_maxima_restitucion" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha real restitución<input class="form-control" data-field="fecha_real_restitucion" name="fecha_real_restitucion" type="date"></label></div>
+            </div>
+
+            <!-- Bloque: Bono -->
+            <h4 class="fw-bold mt-4 mb-3" style="font-size:1.3rem; color:#8432c6;">Bono</h4>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><label class="form-label">Fecha ideal de envío a administración (Supervisora)<input class="form-control" data-field="fecha_ideal_envio_admin" name="fecha_ideal_envio_admin" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha de envío real a administración (Supervisora)<input class="form-control" data-field="fecha_envio_real_admin" name="fecha_envio_real_admin" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha ideal máxima entrega bono (Administración)<input class="form-control" data-field="fecha_ideal_maxima_entrega_bono" name="fecha_ideal_maxima_entrega_bono" type="date"></label></div>
+                <div class="col-md-3"><label class="form-label">Fecha real entrega bono (Administración)<input class="form-control" data-field="fecha_real_entrega_bono" name="fecha_real_entrega_bono" type="date"></label></div>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label" for="observaciones_bono">Observaciones</label>
+                <textarea class="form-control" id="observaciones_bono" data-field="observaciones_bono" name="observaciones_bono" rows="3" style="height:auto;"></textarea>
+            </div>
+            <div class="d-flex justify-content-center mt-3">
+                <button type="submit" class="btn btn-morado">Guardar</button>
+            </div>
+        </form>  
+
+
+<script>
+
+function checkAuth() {
+  const token = sessionStorage.getItem("token");
+  const exp = sessionStorage.getItem("expira_iso");
+  if (!token || (exp && new Date(exp) < new Date())) {
+    sessionStorage.clear();
+    window.location.href = "login.html";
+  }
+}
+function logout() {
+  sessionStorage.clear();
+  window.location.href = "login.html";
+}
+checkAuth();
+
+
+const API_BASE = "https://api-postgre-ee5da0d4a499.herokuapp.com";
+
+// Cambia a true si tu endpoint real es plural: /bdproyectos/{id}
+const BD_PROYECTO_PLURAL = false; // pon true si tu ruta correcta es /bdproyectos/{id}
+
+// Caches
+const cacheReclutamientos = new Map();
+const cacheBdProyectos    = new Map();
+const cacheParticipantes  = new Map();
+const cacheHijos          = new Map(); // hijos (BDHijos)
+const cacheProyectos      = new Map(); // proyectos (catálogo principal)
+const reclIndex = new Map();
+
+function norm(obj, keys, fallback = "-") {
+  if (!obj) return fallback;
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(obj, k) &&
+        obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
+      return obj[k];
+    }
+  }
+  return fallback;
+}
+
+function escapeHTML(str) {
+  return String(str ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+async function fetchJSON(url, token, label) {
+  try {
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (resp.status === 401) {
+      sessionStorage.clear();
+      window.location.href = "login.html";
+      return null;
+    }
+    if (!resp.ok) {
+      console.error(`[${label}] ${resp.status} -> ${await resp.text()}`);
+      return null;
+    }
+    return await resp.json();
+  } catch (e) {
+    console.error(`[${label}] Network error`, e);
+    return null;
+  }
+}
+
+async function getReclutamientos(idProfesional, token) {
+  const key = `prof_${idProfesional}`;
+  if (cacheReclutamientos.has(key)) return cacheReclutamientos.get(key);
+  const data = await fetchJSON(`${API_BASE}/reclutamientos/profesional/${idProfesional}`, token, "reclutamientos");
+  cacheReclutamientos.set(key, Array.isArray(data) ? data : []);
+  return cacheReclutamientos.get(key);
+}
+
+// Reclutamiento individual (para PUT completo)
+async function getReclutamientoById(id, token) {
+  // Buscar primero en cacheReclutamientos
+  for (const arr of cacheReclutamientos.values()) {
+    if (Array.isArray(arr)) {
+      const found = arr.find(r => String(r.id) === String(id));
+      if (found) return found;
+    }
+  }
+  // Fallback a endpoint directo si existe
+  return await fetchJSON(`${API_BASE}/reclutamientos/${id}`, token, `reclutamiento(${id})`);
+}
+
+async function getBdProyecto(id, token) {
+  if (!id) return null;
+  if (cacheBdProyectos.has(id)) return cacheBdProyectos.get(id);
+  const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+  const data = await fetchJSON(`${API_BASE}/${path}/${id}`, token, `bdproyecto(${id})`);
+  if (data) cacheBdProyectos.set(id, data);
+  return data;
+}
+
+async function getParticipante(id, token) {
+  if (!id) return null;
+  if (cacheParticipantes.has(id)) return cacheParticipantes.get(id);
+  const data = await fetchJSON(`${API_BASE}/participantes/${id}`, token, `participante(${id})`);
+  if (data) cacheParticipantes.set(id, data);
+  return data;
+}
+
+// 4. Hijo por id (ruta: /hijos/{id})
+async function getHijo(id, token) {
+  if (!id) return null;
+  if (cacheHijos.has(id)) return cacheHijos.get(id);
+  const data = await fetchJSON(`${API_BASE}/hijos/${id}`, token, `hijo(${id})`);
+  if (data) cacheHijos.set(id, data);
+  return data;
+}
+
+// 5. Proyecto por id (ruta: /proyectos/{id})
+async function getProyecto(id, token) {
+  if (!id) return null;
+  if (cacheProyectos.has(id)) return cacheProyectos.get(id);
+  const data = await fetchJSON(`${API_BASE}/proyectos/${id}`, token, `proyecto(${id})`);
+  if (data) cacheProyectos.set(id, data);
+  return data;
+}
+
+// ---------- Mapeos para el modal ----------
+const fieldMapping = {
+  origen: ["origen","origen_dato","fuente_origen"],
+  nombre_apellido: ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"],
+  cedula: ["cedula","documento","id_documento"],
+  nacionalidad: ["nacionalidad","pais_origen"],
+  edad: ["edad"],
+  direccion: ["direccion","direccion_residencia"],
+  barrio: ["barrio"],
+  nse: ["nse","estrato","nivel_socioeconomico"],
+  correo: ["correo_electronico","email","email_principal"],
+  telefono1: ["telefono_1","telefono1","telefono","celular","contacto"],
+  telefono2: ["telefono_2","telefono2"],
+  telefono3: ["telefono_3","telefono3"],
+  viaje_2meses: ["viaje_2meses"],
+  bebe_nombre: ["bebe_nombre","nombre_hijo","nombre_bebe"],
+  // quitar 'fecha_nacimiento' para no tomar la del participante como la del bebé
+  bebe_nacimiento: ["bebe_nacimiento","fecha_nacimiento_bebe","nacimiento"],
+  bebe_edad_meses: ["p4","bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
+  bebe_sexo: ["sexo","sexo_bebe"],
+  crema_marca: ["p23"],
+  crema_frecuencia: ["p25"],
+  otra_crema_si_no: ["p8"],
+  otra_crema_marca: ["p9"],
+  otra_crema_marca_referencia: ["p10"],
+  otra_crema_razones: ["p11"],
+  // profesional eliminado del formulario
+  otra_crema_frecuencia: ["p12"],
+  // cambios_panal_dia eliminado del formulario
+  fecha_asignacion_gestora: ["fecha_asignacion_gestora","fecha_asignacion_g"],
+  fecha_asignacion_supervisora: ["fecha_asignacion_supervisora","fecha_asignacion_s"],
+  fecha_realizacion_profesional: ["fecha_realizacion_profesional","fecha_realizacion_p"],
+  estado_encuadre: ["estado_encuadre","estado"],
+  tiempo_estatus_encuadre: ["tiempo_estatus_encuadre","tiempo_encuadre"],
+  // permitir que si el input usa 'tiempo_encuadre' directamente también funcione
+  tiempo_encuadre: ["tiempo_encuadre","tiempo_estatus_encuadre"],
+  fecha_ideal_min: ["fecha_ideal_min"],
+  fecha_ideal_max: ["fecha_ideal_max"],
+  fecha_real: ["fecha_real","fecha_e_inicial"],
+  hora: ["hora"],
+  link_entrevista: ["link_entrevista","link"],
+  efectividad: ["efectividad"],
+  tiempo_entrevista_inicial: ["tiempo_entrevista_inicial","tiempo_e_inicial"],
+  calificacion_tiro_blanco: ["calificacion_tiro_blanco"],
+  fecha_entrega_producto: ["fecha_entrega_producto","fecha_despacho","fecha_despacho_0"],
+  fecha_recibo: ["fecha_recibo"],
+  tiempo_estatus_recibo: ["tiempo_estatus_recibo","tiempo_recibo"],
+  confirmacion_verbal: ["confirmacion_verbal"],
+  fecha_ideal_inicio_muestra: ["fecha_ideal_inicio_muestra"],
+  fecha_inicio_muestra: ["fecha_inicio_muestras","fecha_inicio_muestra_0"],
+  fecha_ideal_seguimiento_uso: ["fecha_ideal_seguimiento_uso"],
+  fecha_seguimiento_real_uso: ["fecha_seguimiento_real_uso","fecha_seg_muestras","fecha_seg_muestras_0"],
+  fecha_ideal_evaluacion_monadica: ["fecha_ideal_evaluacion_monadica"],
+  fecha_real_evaluacion_monadica: ["fecha_monadica","fecha_real_evaluacion_monadica"],
+  tiempo_evaluacion_monadica: ["tiempo_monadica_muestras","tiempo_monadica_muestras_0"],
+  irritacion_bebe_primer_producto: ["irritacion_bebe_primer_producto","irritaciones","irritaciones_0"],
+  fecha_ideal_min_final: ["fecha_ideal_min_final"],
+  fecha_ideal_max_final: ["fecha_ideal_max_final"],
+  fecha_entrevista_final: ["fecha_entrevista_final","fecha_final"],
+  hora_final: ["hora_final"],
+  status_efectividad_final: ["efectividad_final"],
+  modalidad_entrevista_final: ["modalidad_entrevista_final","modalidad_entrevista"],
+  tiempo_entrevista_final: ["tiempo_entrevista_final","tiempo_final"],
+  calificacion_tiro_blanco_final: ["calificacion_tiro_blanco_final"],
+  fecha_ideal_maxima_restitucion: ["fecha_ideal_maxima_restitucion"],
+  restitucion_entregables: ["restitucion_entregables","entregables"],
+  fecha_real_restitucion: ["fecha_real_restitucion","fecha_restitucion"],
+  fecha_ideal_envio_admin: ["fecha_ideal_envio_admin"],
+  fecha_envio_real_admin: ["fecha_envio_real_admin","fecha_envio_admin"],
+  fecha_ideal_maxima_entrega_bono: ["fecha_ideal_maxima_entrega_bono"],
+  fecha_real_entrega_bono: ["fecha_real_entrega_bono","fechas_bono","fechas_bono_0"],
+  observaciones_bono: ["observaciones"]
+};
+
+// Override de nombres al guardar
+const saveNameOverride = {
+  nombre_apellido: "nombre_participante",
+  telefono1: "telefono",
+  telefono2: "telefono2",
+  telefono3: "telefono3"
+};
+
+function resolveValue(key, combined) {
+  const list = fieldMapping[key] || [key];
+  for (const candidate of list) {
+    if (candidate in combined && combined[candidate] !== null && combined[candidate] !== "") {
+      return Array.isArray(combined[candidate]) ? combined[candidate][0] : combined[candidate];
+    }
+  }
+  return "";
+}
+
+async function cargarReclutamientos() {
+  const token = sessionStorage.getItem("token");
+  const idProfesional = sessionStorage.getItem("id_usuario");
+  const tbody = document.getElementById("users-body");
+  if (!token || !idProfesional || !tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="8">Cargando...</td></tr>`;
+
+  const reclutamientos = await getReclutamientos(idProfesional, token);
+  if (!Array.isArray(reclutamientos) || reclutamientos.length === 0) {
+  tbody.innerHTML = `<tr><td colspan="8">Sin registros</td></tr>`;
+    return;
+  }
+
+  const bdIds = [...new Set(reclutamientos.map(r => r.id_bdproyecto).filter(Boolean))];
+  await Promise.all(bdIds.map(id => getBdProyecto(id, token)));
+
+  const participanteIds = new Set();
+  const hijoIds = new Set();
+  const proyectoIds = new Set();
+  for (const id of bdIds) {
+    const bd = cacheBdProyectos.get(id);
+    if (!bd) continue;
+    const pid = bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part;
+    if (pid) participanteIds.add(pid);
+    const hid = bd.id_hijo || bd.idHijo || bd.id_hijo_fk || bd.id_bdhijo;
+    if (hid) hijoIds.add(hid);
+    // Detectar id de proyecto: priorizar id_proyecto; si 'proyecto' es numérico, usarlo
+    let projId = bd.id_proyecto || bd.idProyecto;
+    if (!projId && bd.proyecto && /^\d+$/.test(String(bd.proyecto))) {
+      projId = Number(bd.proyecto);
+    }
+    if (projId) proyectoIds.add(Number(projId));
+  }
+  await Promise.all([...participanteIds].map(pid => getParticipante(pid, token)));
+  await Promise.all([...hijoIds].map(hid => getHijo(hid, token)));
+  await Promise.all([...proyectoIds].map(pid => getProyecto(pid, token)));
+
+  reclIndex.clear();
+
+  const rowsHTML = reclutamientos.map(r => {
+    const bd = cacheBdProyectos.get(r.id_bdproyecto);
+    const pid = bd && (bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part);
+    const part = pid ? cacheParticipantes.get(pid) : null;
+
+    // Buscar hijo asociado al bd
+    let hijo = null;
+    let proyectoObj = null;
+    if (bd) {
+      const hid = bd.id_hijo || bd.idHijo || bd.id_hijo_fk || bd.id_bdhijo;
+      if (hid) hijo = cacheHijos.get(hid);
+      let projId = bd.id_proyecto || bd.idProyecto;
+      if (!projId && bd.proyecto && /^\d+$/.test(String(bd.proyecto))) projId = Number(bd.proyecto);
+      if (projId) proyectoObj = cacheProyectos.get(Number(projId));
+    }
+
+    reclIndex.set(r.id, { reclutamiento: r, bdProyecto: bd, participante: part, hijo, proyecto: proyectoObj });
+
+    const nombre = norm(part, ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"]);
+    const telefono = norm(part, ["telefono","telefono1","telefono_1","celular","contacto"]);
+    // Nombre del proyecto: usar objeto proyecto si existe
+    let proyectoNombre = "-";
+    if (cacheProyectos.size && bd) {
+      let projId = bd.id_proyecto || bd.idProyecto;
+      if (!projId && bd.proyecto && /^\d+$/.test(String(bd.proyecto))) projId = Number(bd.proyecto);
+      if (projId) {
+        const proj = cacheProyectos.get(Number(projId));
+        if (proj) {
+          proyectoNombre = norm(proj, ["nombre_proyecto","nombre","nombreProyecto"], projId);
+        }
+      }
+    }
+    if (proyectoNombre === "-") {
+      // fallback texto en bd si no era numérico y parece ya un nombre
+      if (bd && bd.proyecto && !/^\d+$/.test(String(bd.proyecto))) proyectoNombre = bd.proyecto;
+      else proyectoNombre = norm(bd, ["proyecto","id_bdproyecto","id"], r.id_bdproyecto);
+    }
+    const ciudad = norm(part, ["ciudad","municipio","localidad"]);
+    function okBool(val){ return val === true || val === 'true' || val === 'OK'; }
+    const encuadre = okBool(r.estado) ? 'OK' : '-';
+    const inicial = okBool(r.efectividad) ? 'OK' : '-';
+    let monadica = '-';
+    if (Array.isArray(r.tiempo_monadica_muestras) && r.tiempo_monadica_muestras.length > 0) {
+      const first = r.tiempo_monadica_muestras[0];
+      if (first && typeof first === 'object' && 'Duration' in first) {
+        if (Number(first.Duration) > 0) monadica = 'OK';
+      } else {
+        monadica = 'OK';
+      }
+    }
+  const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
+
+    return `<tr class="recl-row" data-id-recl="${escapeHTML(r.id)}">
+      <td>${escapeHTML(nombre)}</td>
+      <td>${escapeHTML(telefono)}</td>
+  <td>${escapeHTML(proyectoNombre)}</td>
+      <td>${escapeHTML(ciudad)}</td>
+  <td>${escapeHTML(encuadre)}</td>
+  <td>${escapeHTML(inicial)}</td>
+  <td>${escapeHTML(monadica)}</td>
+  <td>${escapeHTML(finalE)}</td>
+    </tr>`;
+  }).join("");
+
+  tbody.innerHTML = rowsHTML;
+
+  tbody.querySelectorAll(".recl-row").forEach(tr => {
+    tr.addEventListener("click", () => {
+      const idRecl = tr.getAttribute("data-id-recl");
+      openReclutamientoModal(Number(idRecl));
+    });
+  });
+
+  const filtro = document.getElementById("filter-nombre");
+  if (filtro && !filtro.dataset.bound) {
+    filtro.dataset.bound = "1";
+    filtro.addEventListener("input", () => {
+      const val = filtro.value.toLowerCase();
+      tbody.querySelectorAll("tr").forEach(tr => {
+        tr.style.display = tr.textContent.toLowerCase().includes(val) ? "" : "none";
+      });
+    });
+  }
+}
+
+let modalInstance = null;
+let modalState = {
+  reclutamientoId: null,
+  bdProyectoId: null,
+  participanteId: null,
+  originalValues: {}
+};
+
+// Offset horario (en horas) para ajustar times que vienen en GMT-5 y se muestran 5h antes
+// Si ves que ahora se suman horas incorrectas ajusta este valor.
+const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
+const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
+
+function applyTimeOffset(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  if(isNaN(d.getTime())) return null;
+  const shifted = new Date(d.getTime() + TIME_OFFSET_HOURS * 3600000);
+  const hh = String(shifted.getHours()).padStart(2,'0');
+  const mm = String(shifted.getMinutes()).padStart(2,'0');
+  return `${hh}:${mm}`;
+}
+
+function normalizeInterval(val){
+  if(val == null) return "";
+  // Si viene como objeto {Duration, Valid}
+  if (typeof val === 'object' && val !== null && 'Duration' in val) {
+    const ns = Number(val.Duration);
+    if(!isNaN(ns) && ns > 0) {
+      const totalSeconds = Math.floor(ns / 1e9);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600)/60);
+      const seconds = totalSeconds % 60;
+  // Siempre devolver con segundos para consistencia: HH:MM:SS
+  return `${String(hours)}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    }
+    return "";
+  }
+  let s = String(val).trim();
+  if(s === "") return "";
+  // Si viene como 'HH:MM:SS.sss' cortar
+  const frac = s.indexOf('.')>0 ? s.split('.')[0] : s;
+  // Si viene como solo números (ej 1305) interpretarlo como 13:05
+  if(/^[0-9]{3,4}$/.test(frac)) {
+    const raw = frac.padStart(4,'0');
+    s = raw.slice(0,raw.length-2)+":"+raw.slice(-2);
+  } else {
+    s = frac;
+  }
+  // Asegurar formato HH:MM o HH:MM:SS
+  const parts = s.split(':');
+  if(parts.length === 2){
+    const [h,m] = parts;
+    // devolver con segundos 00
+    return `${String(Number(h))}:${m.padStart(2,'0')}:00`;
+  } else if(parts.length === 3){
+    const [h,m,sec] = parts;
+    return `${String(Number(h))}:${m.padStart(2,'0')}:${sec.padStart(2,'0')}`;
+  }
+  return s; // fallback
+}
+
+function openReclutamientoModal(reclId) {
+  const triple = reclIndex.get(reclId);
+  if (!triple) {
+    console.warn("No data para reclutamiento", reclId);
+    return;
+  }
+  const { reclutamiento, bdProyecto, participante, hijo } = triple;
+  modalState.reclutamientoId = reclutamiento.id;
+  modalState.bdProyectoId = bdProyecto ? (bdProyecto.id_bdproyecto || bdProyecto.id) : null;
+  modalState.participanteId = participante ? (participante.id || participante.id_participante || participante.idParticipante) : null;
+
+  const template = document.getElementById("popupFormTemplate");
+  if (!template) return;
+
+  const clone = template.cloneNode(true);
+  clone.id = "popupDynamicForm";
+  clone.style.display = "";
+
+  const modalBody = document.getElementById("modalBodyContent");
+  modalBody.innerHTML = "";
+  modalBody.appendChild(clone);
+
+  const combined = {};
+  // Merge bdProyecto primero para que reclutamiento tenga prioridad en campos duplicados (ej. observaciones)
+  if (bdProyecto) Object.assign(combined, bdProyecto);
+  Object.assign(combined, reclutamiento);
+  if (participante) Object.assign(combined, participante); // prioridad a datos del participante
+  if (hijo) {
+    const hijoCopy = {...hijo};
+    // Si el hijo trae fecha_nacimiento y ya existe una del participante, renombrar
+    if (hijoCopy.fecha_nacimiento && combined.fecha_nacimiento && hijoCopy.fecha_nacimiento !== combined.fecha_nacimiento) {
+      hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
+      delete hijoCopy.fecha_nacimiento;
+    }
+    Object.assign(combined, hijoCopy); // ahora no sobreescribe la del participante
+  }
+
+  // Derivar calificaciones desde arreglo tiro_blanco (si backend solo retorna lista)
+  if (Array.isArray(combined.tiro_blanco)) {
+    if (combined.tiro_blanco[0] != null && combined.calificacion_tiro_blanco == null) {
+      combined.calificacion_tiro_blanco = combined.tiro_blanco[0];
+    }
+    if (combined.tiro_blanco[1] != null && combined.calificacion_tiro_blanco_final == null) {
+      combined.calificacion_tiro_blanco_final = combined.tiro_blanco[1];
+    }
+  }
+
+  console.log("[COMBINED]", combined);
+
+  // Calcular edad solo del PARTICIPANTE: usar la fecha_nacimiento que quedó tras merge (no la del bebé renombrada)
+  const birthKeys = ["fecha_nacimiento"]; // ya no incluye la del bebé
+  let birthDateStr = null;
+  for (const k of birthKeys) {
+    if (combined[k]) { birthDateStr = combined[k]; break; }
+  }
+  if (birthDateStr && !combined.edad) {
+    const d = new Date(birthDateStr);
+    if (!isNaN(d.getTime())) {
+      const today = new Date();
+      let age = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+      if (age >= 0 && age < 130) combined.edad = String(age); // asignar edad estimada
+    }
+  }
+
+  // Derivar hora y hora_final desde fechas si faltan
+  function extractTime(str){
+    if(!str) return null;
+    // Intentar parse ISO y aplicar offset
+    const d = new Date(str);
+    if(!isNaN(d.getTime())) {
+      const shifted = new Date(d.getTime() + TIME_OFFSET_HOURS * 3600000);
+      const hh = String(shifted.getHours()).padStart(2,'0');
+      const mm = String(shifted.getMinutes()).padStart(2,'0');
+      return `${hh}:${mm}`;
+    }
+    // Fallback simple buscar HH:MM
+    const m = str.match(/(\d{2}:\d{2})/);
+    return m ? m[1] : null;
+  }
+  if(!combined.hora && combined.fecha_e_inicial){
+    const t = extractTime(combined.fecha_e_inicial);
+    if(t) combined.hora = t;
+  }
+  if(!combined.hora_final && combined.fecha_final){
+    const t2 = extractTime(combined.fecha_final);
+    if(t2) combined.hora_final = t2;
+  }
+
+  // Derivar fechas de entrega y recibo desde fecha_despacho[0] y [1]
+  if (Array.isArray(combined.fecha_despacho)) {
+    if (!combined.fecha_entrega_producto && combined.fecha_despacho[0]) {
+      combined.fecha_entrega_producto = combined.fecha_despacho[0];
+    }
+    if (!combined.fecha_recibo && combined.fecha_despacho[1]) {
+      combined.fecha_recibo = combined.fecha_despacho[1];
+    }
+  }
+
+  // ---------------- Cálculo automático de fechas ideales ----------------
+  // Regla solicitada:
+  // fecha_ideal_min = fecha_realizacion_profesional + 1 día
+  // fecha_ideal_max = fecha_realizacion_profesional + 3 días
+  function addDays(dateStr, days){
+    if(!dateStr) return null;
+    const d = new Date(dateStr);
+    if(isNaN(d.getTime())) return null;
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const baseRealizacion = combined.fecha_realizacion_profesional || combined.fecha_realizacion_p;
+  if (baseRealizacion) {
+    if(!combined.fecha_ideal_min || combined.fecha_ideal_min === '') {
+      const calcMin = addDays(baseRealizacion, 2);
+      if(calcMin) combined.fecha_ideal_min = calcMin;
+    }
+    if(!combined.fecha_ideal_max || combined.fecha_ideal_max === '') {
+      const calcMax = addDays(baseRealizacion, 4);
+      if(calcMax) combined.fecha_ideal_max = calcMax;
+    }
+  }
+
+  const baseRealizacion2 = combined.fecha_despacho[1];
+  if (baseRealizacion2) {
+    if(!combined.fecha_ideal_inicio_muestra || combined.fecha_ideal_inicio_muestra === '') {
+      const calcMin = addDays(baseRealizacion2, 2);
+      if(calcMin) combined.fecha_ideal_inicio_muestra = calcMin;
+    }
+    if(!combined.fecha_ideal_seguimiento_uso || combined.fecha_ideal_seguimiento_uso === '') {
+      const calcMin = addDays(baseRealizacion2, 5);
+      if(calcMin) combined.fecha_ideal_seguimiento_uso = calcMin;
+    }
+  }
+
+  const baseRealizacion3 = combined.fecha_inicio_muestras[0];
+  if (baseRealizacion3) {
+    if(!combined.fecha_ideal_evaluacion_monadica || combined.fecha_ideal_evaluacion_monadica === '') {
+      const calcMin = addDays(baseRealizacion3, 8);
+      if(calcMin) combined.fecha_ideal_evaluacion_monadica = calcMin;
+    }
+  }
+
+  const baseRealizacion4 = combined.fecha_monadica;
+  if (baseRealizacion4) {
+    if(!combined.fecha_ideal_min_final || combined.fecha_ideal_min_final === '') {
+      const calcMin = addDays(baseRealizacion4, 2);
+      if(calcMin) combined.fecha_ideal_min_final = calcMin;
+    }
+    if(!combined.fecha_ideal_max_final || combined.fecha_ideal_max_final === '') {
+      const calcMax = addDays(baseRealizacion4, 4);
+      if(calcMax) combined.fecha_ideal_max_final = calcMax;
+    }
+  }
+
+  const baseRealizacion5 = combined.fecha_final;
+  if (baseRealizacion5) {
+    if(!combined.fecha_ideal_maxima_restitucion || combined.fecha_ideal_maxima_restitucion === '') {
+      const calcMin = addDays(baseRealizacion5, 4);
+      if(calcMin) combined.fecha_ideal_maxima_restitucion = calcMin;
+    }
+    if(!combined.fecha_ideal_envio_admin || combined.fecha_ideal_envio_admin === '') {
+      const calcMin = addDays(baseRealizacion5, 3);
+      if(calcMin) combined.fecha_ideal_envio_admin = calcMin;
+    }
+  }
+
+  const baseRealizacion6 = combined.fecha_envio_admin;
+  if (baseRealizacion6) {
+    if(!combined.fecha_ideal_maxima_entrega_bono || combined.fecha_ideal_maxima_entrega_bono === '') {
+      const calcMin = addDays(baseRealizacion6, 4);
+      if(calcMin) combined.fecha_ideal_maxima_entrega_bono = calcMin;
+    }
+  }
+  // ----------------------------------------------------------------------
+
+  modalState.originalValues = {};
+  clone.querySelectorAll("[data-field]").forEach(input => {
+    const key = input.getAttribute("data-field");
+    let val = resolveValue(key, combined);
+    // Conversión específica para bebe_edad_meses: si es número grande (días) -> meses
+    if (key === 'bebe_edad_meses') {
+      const num = Number(val);
+      if (!isNaN(num) && num > 24) { // umbral: >24 días probablemente no son meses todavía
+        const months = Math.floor(num / 30); // aproximación
+        val = String(months);
+      }
+    }
+    // Normalizar intervalos para campos tiempo_*
+    if (key.startsWith('tiempo_')) {
+      val = normalizeInterval(val);
+    }
+    // Ajustes de tipo date/time (si backend devuelve '2025-09-05T00:00:00Z')
+    // Selects booleanos
+    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(key)) {
+      if (key === 'estado_encuadre') {
+        if (val === 'OK' || val === true || val === 'true') input.value = 'true';
+        else if (val === '' || val == null) input.value = '';
+        else input.value = 'false';
+      } else {
+        if (val === true || val === 'true') input.value = 'true';
+        else if (val === false || val === 'false') input.value = 'false';
+        else input.value = '';
+      }
+      modalState.originalValues[key] = input.value;
+      return;
+    }
+    if (input.type === "date" && val && val.length >= 10) {
+      input.value = val.substring(0,10);
+    } else if (input.type === "time" && val) {
+      input.value = val.substring(0,5);
+    } else {
+      input.value = val;
+    }
+    modalState.originalValues[key] = input.value;
+  });
+
+  // Guardar como valores originales los autocalculados para que no se marquen como cambios inmediatamente
+  ["fecha_ideal_min","fecha_ideal_max"].forEach(k => {
+    const inp = clone.querySelector(`[data-field="${k}"]`);
+    if (inp && modalState.originalValues[k] === undefined) {
+      modalState.originalValues[k] = inp.value;
+    }
+  });
+
+  // Listener: si cambia la fecha_realizacion_profesional recalcular ideales (solo si usuario no los modificó luego)
+  const realizInp = clone.querySelector('[data-field="fecha_realizacion_profesional"]');
+  if (realizInp) {
+    realizInp.addEventListener('change', () => {
+      const base = realizInp.value;
+      if(!base) return;
+      const minInp = clone.querySelector('[data-field="fecha_ideal_min"]');
+      const maxInp = clone.querySelector('[data-field="fecha_ideal_max"]');
+      if(minInp) {
+        const oldAuto = modalState.originalValues['fecha_ideal_min'];
+        if(minInp.value === oldAuto || !minInp.value) {
+          const newMin = addDays(base,2);
+          if(newMin) minInp.value = newMin;
+        }
+      }
+      if(maxInp) {
+        const oldAuto = modalState.originalValues['fecha_ideal_max'];
+        if(maxInp.value === oldAuto || !maxInp.value) {
+          const newMax = addDays(base,4);
+          if(newMax) maxInp.value = newMax;
+        }
+      }
+    });
+  }
+
+  // Validación en vivo de intervalos
+  clone.querySelectorAll('[data-field^="tiempo_"]').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const v = inp.value.trim();
+      if(v && !INTERVAL_REGEX.test(v)) {
+        inp.classList.add('is-invalid');
+      } else {
+        inp.classList.remove('is-invalid');
+      }
+    });
+  });
+
+  clone.addEventListener("submit", handleModalSave);
+
+  const modalEl = document.getElementById("infoModal");
+  if (!modalInstance) {
+    modalInstance = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+  }
+  modalInstance.show();
+}
+
+async function handleModalSave(e) {
+  e.preventDefault();
+  const form = e.target;
+  const token = sessionStorage.getItem("token");
+  if (!token) return;
+
+  const changed = {};
+  form.querySelectorAll("[data-field]").forEach(inp => {
+    const key = inp.getAttribute("data-field");
+    if (modalState.originalValues[key] !== inp.value) {
+      const backendKey = saveNameOverride[key] || key;
+      changed[backendKey] = inp.value;
+    }
+  });
+
+  if (Object.keys(changed).length === 0) {
+    console.log("Sin cambios");
+    modalInstance.hide();
+    return;
+  }
+
+  const participanteKeys = new Set([
+    "nombre_participante","telefono","telefono2","telefono3","correo","barrio","direccion",
+    "ciudad","nacionalidad","edad","cedula","viaje_2meses","bebe_nombre",
+    "bebe_nacimiento","bebe_edad_meses","bebe_sexo","crema_marca",
+    "crema_frecuencia","otra_crema_si_no",
+    "otra_crema_marca","otra_crema_marca_referencia","otra_crema_razones",
+    "otra_crema_frecuencia","origen","nse"
+  ]);
+  const bdProyectoKeys = new Set([
+    "proyecto","observaciones_bono" // profesional eliminado
+  ]);
+  const reclutamientoKeys = new Set([
+    "fecha_asignacion_gestora","fecha_asignacion_supervisora","fecha_realizacion_profesional",
+    "estado_encuadre","tiempo_estatus_encuadre","fecha_ideal_min","fecha_ideal_max",
+    "fecha_real","hora",/* "link_entrevista" <-- eliminado, se mapea a link */ "efectividad","tiempo_entrevista_inicial",
+    "calificacion_tiro_blanco","fecha_entrega_producto","fecha_recibo",
+    "tiempo_estatus_recibo","confirmacion_verbal","fecha_ideal_inicio_muestra",
+    "fecha_inicio_muestra","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso",
+    "fecha_ideal_evaluacion_monadica","fecha_real_evaluacion_monadica",
+    "tiempo_evaluacion_monadica","irritacion_bebe_primer_producto",
+    "fecha_ideal_min_final","fecha_ideal_max_final","fecha_entrevista_final",
+    "hora_final","status_efectividad_final","modalidad_entrevista_final",
+    "tiempo_entrevista_final","calificacion_tiro_blanco_final",
+    "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
+    "fecha_ideal_envio_admin","fecha_envio_real_admin",
+  "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
+  "observaciones","observaciones_bono"
+  ]);
+
+  const payloadParticipante = {};
+  const payloadBdProyecto = {};
+  const payloadReclutamientoPartial = {};
+
+  Object.entries(changed).forEach(([origKey, val]) => {
+    let k = origKey;
+    if (['estado_encuadre','efectividad','status_efectividad_final'].includes(k)) {
+      if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
+    }
+
+    // Alias UI -> backend
+    if (k === 'link_entrevista') k = 'link';
+  if (k === 'estado_encuadre') k = 'estado';
+    if (k === 'fecha_entrevista_final') k = 'fecha_final';
+    if (k === 'observaciones_bono') k = 'observaciones';
+    if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
+
+    // Normalizar intervalos
+    if (k.startsWith('tiempo_')) {
+      const norm = normalizeInterval(val);
+      if (norm && INTERVAL_REGEX.test(norm)) {
+        val = norm;
+      } else {
+        console.warn("Intervalo inválido ignorado:", k, val);
+        return;
+      }
+    }
+
+  if (participanteKeys.has(k)) {
+      payloadParticipante[k] = val;
+    } else if (bdProyectoKeys.has(k)) {
+      payloadBdProyecto[k] = val;
+    } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final'].includes(k)) {
+      payloadReclutamientoPartial[k] = val;
+    } else {
+      console.warn("Campo sin destino:", origKey, "->", k);
+    }
+  });
+
+  const requests = [];
+  if (modalState.participanteId && Object.keys(payloadParticipante).length) {
+  console.log('[PUT participante payload]', payloadParticipante);
+    requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(payloadParticipante)
+    }).then(r => ({target:"participante", r})));
+  }
+  if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
+    const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+  console.log('[PUT bdproyecto payload]', payloadBdProyecto);
+    requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(payloadBdProyecto)
+    }).then(r => ({target:"bdproyecto", r})));
+  }
+  if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
+    // Construir payload completo requerido por UpdateReclutamiento
+    const original = await getReclutamientoById(modalState.reclutamientoId, token) || {};
+
+    // Mapeo UI -> backend (ya son iguales en la mayoría de casos)
+    const fullPayload = {
+      // Campos obligatorios según UPDATE
+      id_bdproyecto: original.id_bdproyecto ?? null,
+      id_profesional: original.id_profesional ?? null,
+      orden_uso: original.orden_uso ?? [],
+      fecha_asignacion_g: original.fecha_asignacion_g ?? null,
+      fecha_asignacion_s: original.fecha_asignacion_s ?? null,
+      fecha_realizacion_p: original.fecha_realizacion_p ?? null,
+      fecha_e_inicial: original.fecha_e_inicial ?? null,
+      tiempo_e_inicial: original.tiempo_e_inicial ?? null,
+      tiempo_recibo: original.tiempo_recibo ?? null,
+      estado: original.estado ?? null,
+      link: original.link ?? null,
+      fecha_despacho: original.fecha_despacho ?? [],
+      fecha_recibe: original.fecha_recibe ?? null,
+      fecha_inicio_muestras: original.fecha_inicio_muestras ?? [],
+      fecha_seg_muestras: original.fecha_seg_muestras ?? [],
+      fecha_monadica: original.fecha_monadica ?? [],
+      irritaciones: original.irritaciones ?? [],
+      fecha_final: original.fecha_final ?? null,
+      tiempo_encuadre: original.tiempo_encuadre ?? null,
+      tiempo_monadica_muestras: original.tiempo_monadica_muestras ?? [],
+      tiempo_final: original.tiempo_final ?? null,
+      ganador: original.ganador ?? null,
+      fecha_restitucion: original.fecha_restitucion ?? null,
+      fecha_envio_admin: original.fecha_envio_admin ?? null,
+      fechas_bono: original.fechas_bono ?? [],
+      observaciones: original.observaciones ?? null,
+      entregables: original.entregables ?? [],
+    efectividad: original.efectividad ?? null,
+    efectividad_final: original.efectividad_final ?? null,
+    tiro_blanco: original.tiro_blanco ?? [],
+      modalidad_entrevista: original.modalidad_entrevista ?? null,
+      observaciones_entregables: original.observaciones_entregables ?? null,
+      fecha_codificacion: original.fecha_codificacion ?? null,
+      descarte: original.descarte ?? null,
+    };
+
+    // Sobrescribir con cambios UI (traducciones específicas si aplica)
+    for (const [kOrig,vRaw] of Object.entries(payloadReclutamientoPartial)) {
+      const k = (kOrig === 'estado_encuadre') ? 'estado' : kOrig;
+      let v = vRaw;
+      if (k === 'link_entrevista') { // asegurar alias si entró así
+        fullPayload.link = v;
+        continue;
+      }
+      if (k === 'status_efectividad_final') { // mapear a efectividad_final
+        fullPayload.efectividad_final = (v === true || v === 'true');
+        continue;
+      }
+      if (kOrig === 'irritacion_bebe_primer_producto') { // mapear a irritaciones[0] booleana
+        const boolVal = (typeof v === 'string') ? /^(si|sí|true|1)$/i.test(v) : !!v;
+        const arrIrr = Array.isArray(fullPayload.irritaciones) ? fullPayload.irritaciones.slice() : [];
+        arrIrr[0] = boolVal;
+        fullPayload.irritaciones = arrIrr;
+        continue;
+      }
+      if (kOrig === 'modalidad_entrevista_final') { // alias a modalidad_entrevista backend
+        fullPayload.modalidad_entrevista = v;
+        continue;
+      }
+      if (k === 'fecha_real_evaluacion_monadica') { // mapear a array fecha_monadica
+        const dateOnly = (typeof v === 'string') ? v.substring(0,10) : v;
+        const arr = Array.isArray(fullPayload.fecha_monadica) ? fullPayload.fecha_monadica.slice() : [];
+        arr[0] = dateOnly;
+        fullPayload.fecha_monadica = arr;
+        continue;
+      }
+      if(k.startsWith('tiempo_') && typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+        const parts = v.split(':').map(Number);
+        let totalSeconds = 0;
+        if (parts.length === 2) totalSeconds = parts[0]*3600 + parts[1]*60;
+        else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
+        const ns = totalSeconds * 1e9;
+        fullPayload[k] = { Duration: ns, Valid: true };
+      } else if (k === 'fecha_entrevista_final') {
+        fullPayload.fecha_final = v;
+      } else if (k === 'modalidad_entrevista_final') {
+        fullPayload.modalidad_entrevista = v;
+      } else if (k === 'observaciones_bono') {
+        fullPayload.observaciones = v;
+      } else if (k === 'link') {                      // <--- asegura guardar en 'link'
+        fullPayload.link = v;
+      } else {
+        fullPayload[k] = v;
+      }
+    }
+
+    // Mapear fecha_entrega_producto y fecha_recibo a array fecha_despacho (posiciones 0 y 1)
+    if ('fecha_entrega_producto' in payloadReclutamientoPartial || 'fecha_recibo' in payloadReclutamientoPartial) {
+      const origArr = Array.isArray(original.fecha_despacho) ? [...original.fecha_despacho] : [];
+      if ('fecha_entrega_producto' in payloadReclutamientoPartial) {
+        origArr[0] = payloadReclutamientoPartial.fecha_entrega_producto || null;
+      }
+      if ('fecha_recibo' in payloadReclutamientoPartial) {
+        origArr[1] = payloadReclutamientoPartial.fecha_recibo || null;
+      }
+      // Limpiar trailing undefined
+      fullPayload.fecha_despacho = origArr.filter((v,i) => v || i < 2);
+      delete fullPayload.fecha_entrega_producto;
+      delete fullPayload.fecha_recibo;
+    }
+
+    // Combinar fecha_e_inicial con hora
+    function extractHour(dt){
+      if(!dt || typeof dt !== 'string') return null;
+      const m = dt.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : null;
+    }
+    const uiHora = payloadReclutamientoPartial.hora; // puede existir si usuario cambió
+    if (fullPayload.fecha_e_inicial) {
+      let datePart = fullPayload.fecha_e_inicial.split('T')[0];
+      let existingHour = extractHour(fullPayload.fecha_e_inicial);
+      let hourPart = uiHora || existingHour || '00:00';
+      if (hourPart.length === 5) hourPart = hourPart + ':00';
+      fullPayload.fecha_e_inicial = `${datePart}T${hourPart}Z`;
+    }
+
+    // Combinar fecha_final con hora_final (solo si fecha_final existe)
+    const uiHoraFinal = payloadReclutamientoPartial.hora_final;
+    if (fullPayload.fecha_final) {
+      let datePart = fullPayload.fecha_final.split('T')[0];
+      let existingHourF = extractHour(fullPayload.fecha_final);
+      let hourPart = uiHoraFinal || existingHourF || '00:00';
+      if (hourPart.length === 5) hourPart = hourPart + ':00';
+      fullPayload.fecha_final = `${datePart}T${hourPart}Z`;
+    }
+
+    // Truncar a solo fecha TODOS los demás campos (backend los quiere YYYY-MM-DD)
+    function toDateOnly(v){
+      if(typeof v === 'string') return v.substring(0,10);
+      return v;
+    }
+    const dateOnlyFields = [
+      'fecha_asignacion_g','fecha_asignacion_s','fecha_realizacion_p','fecha_recibe',
+      'fecha_restitucion','fecha_envio_admin','fecha_codificacion'
+    ];
+    dateOnlyFields.forEach(f => { if(fullPayload[f]) fullPayload[f] = toDateOnly(fullPayload[f]); });
+  ['fecha_despacho','fecha_inicio_muestras','fecha_seg_muestras','fechas_bono','fecha_monadica'].forEach(arrF => {
+      if(Array.isArray(fullPayload[arrF])) {
+        fullPayload[arrF] = fullPayload[arrF].map(x => x ? toDateOnly(x) : x);
+      }
+    });
+
+    // Asegurar que fecha_monadica sea SIEMPRE lista
+    if (fullPayload.fecha_monadica && !Array.isArray(fullPayload.fecha_monadica)) {
+      const v = fullPayload.fecha_monadica;
+      fullPayload.fecha_monadica = [toDateOnly(v)];
+    }
+
+    // Remover campos UI hora sueltos
+    delete fullPayload.hora;
+    delete fullPayload.hora_final;
+  delete fullPayload.modalidad_entrevista_final; // no lo espera backend
+
+    // Construir tiro_blanco a partir de calificaciones si cambiaron
+    if ('calificacion_tiro_blanco' in payloadReclutamientoPartial || 'calificacion_tiro_blanco_final' in payloadReclutamientoPartial) {
+      const arrOrig = Array.isArray(original.tiro_blanco) ? [...original.tiro_blanco] : (Array.isArray(fullPayload.tiro_blanco)? [...fullPayload.tiro_blanco]:[]);
+      if ('calificacion_tiro_blanco' in payloadReclutamientoPartial) {
+        const v = parseInt(payloadReclutamientoPartial.calificacion_tiro_blanco,10);
+        if(!isNaN(v)) arrOrig[0] = v; else arrOrig[0] = null;
+      }
+      if ('calificacion_tiro_blanco_final' in payloadReclutamientoPartial) {
+        const v2 = parseInt(payloadReclutamientoPartial.calificacion_tiro_blanco_final,10);
+        if(!isNaN(v2)) arrOrig[1] = v2; else arrOrig[1] = null;
+      }
+      // Limpiar nulls al final pero mantener posiciones si segunda existe
+      const cleaned = [];
+      if (arrOrig[0] != null) cleaned[0] = arrOrig[0];
+      if (arrOrig[1] != null) cleaned[1] = arrOrig[1];
+      fullPayload.tiro_blanco = cleaned;
+      delete fullPayload.calificacion_tiro_blanco;
+      delete fullPayload.calificacion_tiro_blanco_final;
+    }
+
+    console.log('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
+
+    requests.push(fetch(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(fullPayload)
+    }).then(r => ({target:"reclutamiento", r, debugPayload: fullPayload})));
+  }
+
+  const results = await Promise.all(requests);
+  let fail = false;
+  for (const {target, r} of results) {
+    if (!r.ok) {
+      fail = true;
+      console.error(`Error guardando ${target}`, r.status, await r.text());
+    }
+  }
+  if (!fail) {
+    cacheReclutamientos.clear();
+    await cargarReclutamientos();
+    modalInstance.hide();
+  } else {
+    alert("Algunos cambios fallaron (ver consola).");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", cargarReclutamientos);
+window.openReclutamientoModal = openReclutamientoModal;
+</script>
+        
+<style>
+/* Textarea de observaciones en el modal: dos renglones visibles y ajuste automático */
+.modal-body textarea.form-control {
+  min-height: 3.5em;
+  height: 3.5em;
+  resize: vertical;
+  line-height: 1.4;
+  font-size: 1rem;
+  padding-top: 0.7em;
+  padding-bottom: 0.7em;
+}
+/* Botón morado personalizado para el modal */
+.btn-morado {
+  background-color: #9b51e0;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: 0.7rem 2.5rem;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+}
+/* --- MODAL Y POPUP --- */
+.modal-body textarea.form-control {
+  min-height: 3.5em;
+  height: 3.5em;
+  resize: vertical;
+  font-size: 1rem;
+  padding-top: 0.7em;
+  padding-bottom: 0.7em;
+}
+.btn-morado {
+  background-color: #9b51e0;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: 0.7rem 2.5rem;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+}
+.btn-morado:hover, .btn-morado:focus {
+  background-color: #8432c6;
+  color: #fff;
+}
+.modal-lg {
+  max-width: 1100px;
+}
+.modal-body .row { margin-bottom: 0.5rem; }
+.modal-body .col {
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 180px;
+}
+@media (min-width: 768px) {
+  .modal-body .row-cols-md-3 > .col,
+  .modal-body .row-cols-md-4 > .col,
+  .modal-body .row-cols-md-5 > .col {
+    flex: 0 0 20%;
+    max-width: 20%;
+  }
+  .modal-body .row-cols-md-2 > .col {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+.modal-body h5 {
+  margin-top: 1.2rem;
+  margin-bottom: 0.7rem;
+  border-bottom: 3px solid #9b51e0;
+  padding-bottom: 6px;
+  display: inline-block;
+}
+.modal-body {
+  overflow-x: auto;
+}
+@media (min-width: 768px) {
+  .modal-body .row {
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+  }
+  .modal-body .col {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+}
+
+/* --- TABLA Y FILAS --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+th, td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+td { font-weight: 500; }
+th {
+  background: #333;
+  color: white;
+}
+tbody tr:hover { background: #f0f0f0; }
+.user-row { cursor: pointer; }
+
+/* --- LAYOUT Y ENCABEZADO --- */
+body {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #e6e6e6;
+}
+/* --- FORMULARIO Y INPUTS --- */
+input, select, textarea {
+  width: 90%;
+  padding: 12px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #9b51e0;
+  outline: none;
+}
+textarea {
+  height: 130px;
+  resize: none;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Eliminar flechas de aumentar y disminuir de input Number */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (max-width: 768px) {
+  main { padding: 10px; }
+}
+</style>
