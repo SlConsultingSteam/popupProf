@@ -194,6 +194,10 @@ const saveNameOverride = {
   telefono2: "telefono_2",
   telefono3: "telefono_3",
   origen: "origen_dato",
+  // BDHijos mapeos a nombres backend
+  bebe_nombre: "nombre_hijo",
+  bebe_nacimiento: "fecha_nacimiento",
+  bebe_sexo: "sexo",
   bebe_edad_primer: "p4",  // bebe_edad_primer -> p4
   crema_marca: "p23",      // crema_marca -> p23
   crema_frecuencia: "p25", // crema_frecuencia -> p25
@@ -303,13 +307,16 @@ async function cargarReclutamientos() {
     function okBool(val){ return val === true || val === 'true' || val === 'OK'; }
     const encuadre = okBool(r.estado) ? 'OK' : '-';
     const inicial = okBool(r.efectividad) ? 'OK' : '-';
-    let monadica = '-';
-    if (Array.isArray(r.tiempo_monadica_muestras) && r.tiempo_monadica_muestras.length > 0) {
-      const first = r.tiempo_monadica_muestras[0];
-      if (first && typeof first === 'object' && 'Duration' in first) {
-        if (Number(first.Duration) > 0) monadica = 'OK';
-      } else {
-        monadica = 'OK';
+    // antes: cálculo de `monadica` basado en tiempo/Duration (provoca OK cuando tiempo = 00:00:00)
+    // ahora: marcar OK solo si hay fecha real de evaluación monádica válida
+    let monadica = "-";
+    // posible origen de la fecha monádica: campo array `fecha_monadica` o campo simple `fecha_real_evaluacion_monadica`
+    const fechaMonadicaRaw = Array.isArray(r.fecha_monadica) ? r.fecha_monadica[0] : (r.fecha_real_evaluacion_monadica || r.fecha_monadica);
+    if (fechaMonadicaRaw) {
+      const s = String(fechaMonadicaRaw).trim();
+      // excluir fechas inválidas/placeholder comunes: vacío, "0001-01-01", "1970-01-01" o valores no útiles
+      if (s && !s.startsWith("0001") && !s.startsWith("1970") && s !== "0000-00-00") {
+        monadica = "OK";
       }
     }
   const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
@@ -359,7 +366,7 @@ let modalState = {
 // Si ves que ahora se suman horas incorrectas ajusta este valor.
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
-const DEBUG_UI = false; // activar panel debug en modal
+const DEBUG_UI = true; // activar panel debug en modal
 
 function applyTimeOffset(dateStr){
   if(!dateStr) return null;
@@ -438,6 +445,12 @@ async function openReclutamientoModal(reclKey) {
   modalState.reclutamientoId = reclutamiento.id;
   modalState.bdProyectoId = bdProyecto ? (bdProyecto.id_bdproyecto || bdProyecto.id) : null;
   modalState.participanteId = participante ? (participante.id || participante.id_participante || participante.idParticipante) : null;
+  // Guardar hijoId para PUT de BDHijos
+  modalState.hijoId = null;
+  if (bdProyecto) {
+    const hid = bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo;
+    if (hid) modalState.hijoId = hid;
+  }
 
   const template = document.getElementById("popupFormTemplate");
   if (!template) return;
@@ -514,10 +527,11 @@ async function openReclutamientoModal(reclKey) {
       <div>${escapeHTML(`${API_BASE}/hijos/${hid}`)}</div>
       <div>${escapeHTML(`${API_BASE}/proyectos/${projId ?? ''}`)}</div>
       <hr class="my-1" />
-      <div>PUT URLs:</div>
+  <div>PUT URLs:</div>
       <div>${escapeHTML(`${API_BASE}/reclutamientos/${rid}`)}</div>
       <div>${escapeHTML(`${API_BASE}/participantes/${pid}`)}</div>
       <div>${escapeHTML(`${API_BASE}/${pathBD}/${bdid}`)}</div>
+  <div>${escapeHTML(`${API_BASE}/hijos/${hid}`)}</div>
     `;
     // Insertar arriba del formulario
     const formNode = document.getElementById('popupDynamicForm');
@@ -802,6 +816,10 @@ async function handleModalSave(e) {
     "ciudad","nacionalidad","edad","documento", "sexo", "ciudad", "nse", "tipo_vivienda", "origen_dato",
     "fecha_registro", "fecha_nacimiento"
   ]);
+  const hijoKeys = new Set([
+    // Campos de BDHijos según API
+    "nombre_hijo","nombre","sexo","tipo_documento","fecha_nacimiento","documento","id_participante"
+  ]);
   const bdProyectoKeys = new Set([
     "id_hijo", "id_bdproyecto", "id_participante", "id_proyecto", "estado_participante",
     "p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14",
@@ -833,17 +851,18 @@ async function handleModalSave(e) {
   ]);
 
   const payloadParticipante = {};
+  const payloadBdHijo = {};
   const payloadBdProyecto = {};
   const payloadReclutamientoPartial = {};
 
   Object.entries(changed).forEach(([origKey, val]) => {
     let k = origKey;
-    if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
+  if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
       if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
     }
 
     // Alias UI -> backend
-    if (k === 'link_entrevista') k = 'link';
+  if (k === 'link_entrevista') k = 'link';
   if (k === 'estado_encuadre') k = 'estado';
     // NUEVOS ALIAS para que las fechas se guarden correctamente
   if (k === 'fecha_real') k = 'fecha_e_inicial';
@@ -858,7 +877,7 @@ async function handleModalSave(e) {
   if (k === 'tiempo_evaluacion_monadica') k = 'tiempo_monadica_muestras';
 
     // Normalizar intervalos
-  if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
+    if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
       const norm = normalizeInterval(val);
       if (norm && INTERVAL_REGEX.test(norm)) {
         val = norm;
@@ -870,6 +889,8 @@ async function handleModalSave(e) {
 
   if (participanteKeys.has(k)) {
       payloadParticipante[k] = val;
+    } else if (hijoKeys.has(k)) {
+      payloadBdHijo[k] = val;
     } else if (bdProyectoKeys.has(k)) {
       payloadBdProyecto[k] = val;
   } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final','fecha_inicio_muestras','fecha_seg_muestras','tiempo_e_inicial','tiempo_final','tiempo_monadica_muestras'].includes(k)) {
@@ -887,7 +908,7 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
   
   // Lista de campos posibles del participante (basado en tu API)
   const fullPayloadParticipante = {
-    // id_participante: originalParticipante.id_participante ?? null,
+    id_participante: originalParticipante.id_participante ?? null,
     nombre_participante: originalParticipante.nombre_participante ?? null,
     telefono_1: originalParticipante.telefono_1 ?? null,
     telefono_2: originalParticipante.telefono_2 ?? null,
@@ -898,10 +919,10 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
     ciudad: originalParticipante.ciudad ?? null,
     nacionalidad: originalParticipante.nacionalidad ?? null,
     fecha_nacimiento: originalParticipante.fecha_nacimiento ?? null,
-    // tipo_vivienda: originalParticipante.tipo_vivienda ?? null,
-    // fecha_registro: originalParticipante.fecha_registro ?? null,
+    tipo_vivienda: originalParticipante.tipo_vivienda ?? null,
+    fecha_registro: originalParticipante.fecha_registro ?? null,
     sexo: originalParticipante.sexo ?? null,
-    // origen_dato: originalParticipante.origen_dato ?? null,
+    origen_dato: originalParticipante.origen_dato ?? null,
     nse: originalParticipante.nse ?? null,
     // Agrega cualquier otro campo que tu API espere
   };
@@ -917,88 +938,133 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
   }).then(r => ({ target: "participante", r })));
 }
 
-// Para bdproyecto: si también necesitas payload completo (opcional, pero recomendado si hay errores similares)
+// Para bdhijo: construir payload completo
+if (modalState.hijoId && Object.keys(payloadBdHijo).length) {
+  const originalHijo = await getHijo(modalState.hijoId, token) || {};
+  const fullPayloadHijo = {
+    id: originalHijo.id ?? modalState.hijoId,
+    nombre_hijo: originalHijo.nombre_hijo ?? originalHijo.nombre ?? null,
+    fecha_nacimiento: originalHijo.fecha_nacimiento ?? null,
+    sexo: originalHijo.sexo ?? null,
+    tipo_documento: originalHijo.tipo_documento ?? null,
+    documento: originalHijo.documento ?? null,
+    id_participante: originalHijo.id_participante ?? (modalState.participanteId || null),
+  };
+  // Resolver alias hacia campos backend esperados
+  if (payloadBdHijo.nombre) { payloadBdHijo.nombre_hijo = payloadBdHijo.nombre; delete payloadBdHijo.nombre; }
+
+  Object.assign(fullPayloadHijo, payloadBdHijo);
+
+  console.log('[PUT bdhijo payload]', fullPayloadHijo);
+  requests.push(fetch(`${API_BASE}/hijos/${modalState.hijoId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(fullPayloadHijo)
+  }).then(r => ({ target: "bdhijo", r })));
+}
+
+// Para bdproyecto: incluir TODOS los campos para mantener estado completo
 if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
   const originalBdProyecto = await getBdProyecto(modalState.bdProyectoId, token) || {};
   
   const fullPayloadBdProyecto = {
-    // id_bdproyecto: originalBdProyecto.id_bdproyecto ?? null,
-    // id_participante: originalBdProyecto.id_participante ?? null,
-    // id_proyecto: originalBdProyecto.id_proyecto ?? null,
-    // estado_participante: originalBdProyecto.estado_participante ?? null,
-    // p1: originalBdProyecto.p1 ?? null,
-    // p2: originalBdProyecto.p2 ?? null,
-    // p3: originalBdProyecto.p3 ?? null,
+    id_bdproyecto: originalBdProyecto.id_bdproyecto ?? null,
+    id_participante: originalBdProyecto.id_participante ?? null,
+    id_proyecto: originalBdProyecto.id_proyecto ?? null,
+    id_hijo: (originalBdProyecto.id_hijo != null) ? parseInt(originalBdProyecto.id_hijo, 10) : null,
+    estado_participante: originalBdProyecto.estado_participante ?? null,
+    p1: originalBdProyecto.p1 ?? null,
+    p2: originalBdProyecto.p2 ?? null,
+    p3: originalBdProyecto.p3 ?? null,
     p4: originalBdProyecto.p4 ?? null,
-    // p5: originalBdProyecto.p5 ?? null,
-    // p6: originalBdProyecto.p6 ?? null,
-    // p7: originalBdProyecto.p7 ?? null,
+    p5: originalBdProyecto.p5 ?? null,
+    p6: originalBdProyecto.p6 ?? null,
+    p7: originalBdProyecto.p7 ?? null,
     p8: originalBdProyecto.p8 ?? null,
     p9: originalBdProyecto.p9 ?? null,
     p10: originalBdProyecto.p10 ?? null,
     p11: originalBdProyecto.p11 ?? null,
     p12: originalBdProyecto.p12 ?? null,
-    // p13: originalBdProyecto.p13 ?? null,
-    // p14: originalBdProyecto.p14 ?? null,
-    // p15: originalBdProyecto.p15 ?? null,
-    // p16: originalBdProyecto.p16 ?? null,
-    // p17: originalBdProyecto.p17 ?? null,
-    // p18: originalBdProyecto.p18 ?? null,
-    // p19: originalBdProyecto.p19 ?? null,
-    // p20: originalBdProyecto.p20 ?? null,
-    // p21: originalBdProyecto.p21 ?? null,
-    // p22: originalBdProyecto.p22 ?? null,
+    p13: originalBdProyecto.p13 ?? null,
+    p14: originalBdProyecto.p14 ?? null,
+    p15: originalBdProyecto.p15 ?? null,
+    p16: originalBdProyecto.p16 ?? null,
+    p17: originalBdProyecto.p17 ?? null,
+    p18: originalBdProyecto.p18 ?? null,
+    p19: originalBdProyecto.p19 ?? null,
+    p20: originalBdProyecto.p20 ?? null,
+    p21: originalBdProyecto.p21 ?? null,
+    p22: originalBdProyecto.p22 ?? null,
     p23: originalBdProyecto.p23 ?? null,
-    // p24: originalBdProyecto.p24 ?? null,
+    p24: originalBdProyecto.p24 ?? null,
     p25: originalBdProyecto.p25 ?? null,
-    // p26: originalBdProyecto.p26 ?? null,
-    // p27: originalBdProyecto.p27 ?? null,
-    // p28: originalBdProyecto.p28 ?? null,
-    // p29: originalBdProyecto.p29 ?? null,
-    // p30: originalBdProyecto.p30 ?? null,
-    // p31: originalBdProyecto.p31 ?? null,
-    // p32: originalBdProyecto.p32 ?? null,
-    // p33: originalBdProyecto.p33 ?? null,
-    // p34: originalBdProyecto.p34 ?? null,
-    // p35: originalBdProyecto.p35 ?? null,
-    // p36: originalBdProyecto.p36 ?? null,
-    // p37: originalBdProyecto.p37 ?? null,
-    // p38: originalBdProyecto.p38 ?? null,
-    // p39: originalBdProyecto.p39 ?? null,
-    // p40: originalBdProyecto.p40 ?? null,
-    // p41: originalBdProyecto.p41 ?? null,
-    // p42: originalBdProyecto.p42 ?? null,
-    // p43: originalBdProyecto.p43 ?? null,
-    // p44: originalBdProyecto.p44 ?? null,
-    // p45: originalBdProyecto.p45 ?? null,
-    // p46: originalBdProyecto.p46 ?? null,
-    // p47: originalBdProyecto.p47 ?? null,
-    // p48: originalBdProyecto.p48 ?? null,
-    // p49: originalBdProyecto.p49 ?? null,
-    // p50: originalBdProyecto.p50 ?? null,
-    // p51: originalBdProyecto.p51 ?? null,
-    // p52: originalBdProyecto.p52 ?? null,
-    // p53: originalBdProyecto.p53 ?? null,
-    // p54: originalBdProyecto.p54 ?? null,
-    // p55: originalBdProyecto.p55 ?? null,
-    // p56: originalBdProyecto.p56 ?? null,
-    // p57: originalBdProyecto.p57 ?? null,
-    // p58: originalBdProyecto.p58 ?? null,
-    // p59: originalBdProyecto.p59 ?? null,
-    // p60: originalBdProyecto.p60 ?? null,
-    // p61: originalBdProyecto.p61 ?? null,
-    // documentos: originalBdProyecto.documentos ?? null,
-    // observaciones: originalBdProyecto.observaciones ?? null,
-    // observaciones_supervisora: originalBdProyecto.observaciones_supervisora ?? null,
-    // observaciones_docu: originalBdProyecto.observaciones_docu ?? null,
-    // contacto: originalBdProyecto.contacto ?? null,
-    // conclusion_1: originalBdProyecto.conclusion_1 ?? null,
-    // conclusion_2: originalBdProyecto.conclusion_2 ?? null,
-    // conclusion_3: originalBdProyecto.conclusion_3 ?? null,
-    // id_hijo: originalBdProyecto.id_hijo ?? null
+    p26: originalBdProyecto.p26 ?? null,
+    p27: originalBdProyecto.p27 ?? null,
+    p28: originalBdProyecto.p28 ?? null,
+    p29: originalBdProyecto.p29 ?? null,
+    p30: originalBdProyecto.p30 ?? null,
+    p31: originalBdProyecto.p31 ?? null,
+    p32: originalBdProyecto.p32 ?? null,
+    p33: originalBdProyecto.p33 ?? null,
+    p34: originalBdProyecto.p34 ?? null,
+    p35: originalBdProyecto.p35 ?? null,
+    p36: originalBdProyecto.p36 ?? null,
+    p37: originalBdProyecto.p37 ?? null,
+    p38: originalBdProyecto.p38 ?? null,
+    p39: originalBdProyecto.p39 ?? null,
+    p40: originalBdProyecto.p40 ?? null,
+    p41: originalBdProyecto.p41 ?? null,
+    p42: originalBdProyecto.p42 ?? null,
+    p43: originalBdProyecto.p43 ?? null,
+    p44: originalBdProyecto.p44 ?? null,
+    p45: originalBdProyecto.p45 ?? null,
+    p46: originalBdProyecto.p46 ?? null,
+    p47: originalBdProyecto.p47 ?? null,
+    p48: originalBdProyecto.p48 ?? null,
+    p49: originalBdProyecto.p49 ?? null,
+    p50: originalBdProyecto.p50 ?? null,
+    p51: originalBdProyecto.p51 ?? null,
+    p52: originalBdProyecto.p52 ?? null,
+    p53: originalBdProyecto.p53 ?? null,
+    p54: originalBdProyecto.p54 ?? null,
+    p55: originalBdProyecto.p55 ?? null,
+    p56: originalBdProyecto.p56 ?? null,
+    p57: originalBdProyecto.p57 ?? null,
+    p58: originalBdProyecto.p58 ?? null,
+    p59: originalBdProyecto.p59 ?? null,
+    p60: originalBdProyecto.p60 ?? null,
+    p61: originalBdProyecto.p61 ?? null,
+    documentos: originalBdProyecto.documentos ?? null,
+    observaciones: originalBdProyecto.observaciones ?? null,
+    observaciones_supervisora: originalBdProyecto.observaciones_supervisora ?? null,
+    observaciones_docu: originalBdProyecto.observaciones_docu ?? null,
+    contacto: originalBdProyecto.contacto ?? null,
+    conclusion_1: originalBdProyecto.conclusion_1 ?? null,
+    conclusion_2: originalBdProyecto.conclusion_2 ?? null,
+    conclusion_3: originalBdProyecto.conclusion_3 ?? null,
   };
 
   Object.assign(fullPayloadBdProyecto, payloadBdProyecto);
+
+  // Normalizar id_hijo para que sea compatible con sql.NullInt64 en el backend
+  // (backend parece esperar objeto {Int64: number, Valid: true} o null)
+  if (fullPayloadBdProyecto.hasOwnProperty('id_hijo')) {
+    const v = fullPayloadBdProyecto.id_hijo;
+    if (v === null || v === '' || v === undefined) {
+      fullPayloadBdProyecto.id_hijo = null;
+    } else {
+      const n = Number(v);
+      if (!Number.isNaN(n)) {
+        fullPayloadBdProyecto.id_hijo = { Int64: Math.trunc(n), Valid: true };
+      } else {
+        // valor no convertible -> enviar null para evitar 400
+        fullPayloadBdProyecto.id_hijo = null;
+      }
+    }
+  } else {
+    // asegurar que siempre se envíe explicitamente null si no existe
+    fullPayloadBdProyecto.id_hijo = fullPayloadBdProyecto.id_hijo ?? null;
+  }
 
   console.log('[PUT bdproyecto payload]', fullPayloadBdProyecto);
   const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
