@@ -106,24 +106,23 @@ async function getProyecto(id, token) {
 
 // ---------- Mapeos para el modal ----------
 const fieldMapping = {
-  origen: ["origen_dato"],
-  nombre_apellido: ["nombre_participante"],
-  cedula: ["documento"],
-  nacionalidad: ["nacionalidad"],
+  origen: ["origen","origen_dato","fuente_origen"],
+  nombre_apellido: ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"],
+  cedula: ["cedula","documento","id_documento"],
+  nacionalidad: ["nacionalidad","pais_origen"],
   edad: ["edad"],
-  direccion: ["direccion"],
+  direccion: ["direccion","direccion_residencia"],
   barrio: ["barrio"],
-  fecha_nacimiento: ["fecha_nacimiento"],
-  nse: ["nse"],
-  correo: ["correo_electronico"],
-  telefono1: ["telefono_1"],
-  telefono2: ["telefono_2"],
-  telefono3: ["telefono_3"],
-  bebe_nombre: ["nombre_hijo"],
+  nse: ["nse","estrato","nivel_socioeconomico"],
+  correo: ["correo_electronico","email","email_principal"],
+  telefono1: ["telefono_1","telefono1","telefono","celular","contacto"],
+  telefono2: ["telefono_2","telefono2"],
+  telefono3: ["telefono_3","telefono3"],
+  viaje_2meses: ["viaje_2meses"],
+  bebe_nombre: ["bebe_nombre","nombre_hijo","nombre_bebe"],
   // quitar 'fecha_nacimiento' para no tomar la del participante como la del bebé
   bebe_nacimiento: ["bebe_nacimiento","fecha_nacimiento_bebe","nacimiento"],
-  bebe_edad_meses: ["bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
-  bebe_edad_primer: ["p4"], // si viene en días (valor grande) se convierte a meses visualmente
+  bebe_edad_meses: ["p4","bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
   bebe_sexo: ["sexo","sexo_bebe"],
   crema_marca: ["p23"],
   crema_frecuencia: ["p25"],
@@ -183,29 +182,9 @@ const fieldMapping = {
 // Override de nombres al guardar
 const saveNameOverride = {
   nombre_apellido: "nombre_participante",
-  fecha_nacimiento: "fecha_nacimiento",
-  cedula: "documento",
-  nacionalidad: "nacionalidad",
-  direccion: "direccion",
-  barrio: "barrio",
-  nse: "nse",
-  correo: "correo_electronico",
-  telefono1: "telefono_1",
-  telefono2: "telefono_2",
-  telefono3: "telefono_3",
-  origen: "origen_dato",
-  // BDHijos mapeos a nombres backend
-  bebe_nombre: "nombre_hijo",
-  bebe_nacimiento: "fecha_nacimiento",
-  bebe_sexo: "sexo",
-  bebe_edad_primer: "p4",  // bebe_edad_primer -> p4
-  crema_marca: "p23",      // crema_marca -> p23
-  crema_frecuencia: "p25", // crema_frecuencia -> p25
-  otra_crema_si_no: "p8",  // otra_crema_si_no -> p8
-  otra_crema_marca: "p9",  // otra_crema_marca -> p9
-  otra_crema_marca_referencia: "p10", // otra_crema_marca_referencia -> p10
-  otra_crema_razones: "p11", // otra_crema_razones -> p11
-  otra_crema_frecuencia: "p12", 
+  telefono1: "telefono",
+  telefono2: "telefono2",
+  telefono3: "telefono3"
 };
 
 function resolveValue(key, combined) {
@@ -225,13 +204,6 @@ async function cargarReclutamientos() {
   if (!token || !idProfesional || !tbody) return;
 
   tbody.innerHTML = `<tr><td colspan="8">Cargando...</td></tr>`;
-
-  // Limpiar caches para evitar datos cruzados/obsoletos
-  cacheReclutamientos.clear();
-  cacheBdProyectos.clear();
-  cacheParticipantes.clear();
-  cacheHijos.clear();
-  cacheProyectos.clear();
 
   const reclutamientos = await getReclutamientos(idProfesional, token);
   if (!Array.isArray(reclutamientos) || reclutamientos.length === 0) {
@@ -265,7 +237,7 @@ async function cargarReclutamientos() {
 
   reclIndex.clear();
 
-  const rowsHTML = reclutamientos.map((r, idx) => {
+  const rowsHTML = reclutamientos.map(r => {
     const bd = cacheBdProyectos.get(r.id_bdproyecto);
     const pid = bd && (bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part);
     const part = pid ? cacheParticipantes.get(pid) : null;
@@ -281,8 +253,7 @@ async function cargarReclutamientos() {
       if (projId) proyectoObj = cacheProyectos.get(Number(projId));
     }
 
-  const rowKey = `${String(r.id)}|${String(r.id_bdproyecto ?? '')}|${String(pid ?? '')}|${idx}`;
-  reclIndex.set(rowKey, { reclutamiento: r, bdProyecto: bd, participante: part, hijo, proyecto: proyectoObj });
+    reclIndex.set(r.id, { reclutamiento: r, bdProyecto: bd, participante: part, hijo, proyecto: proyectoObj });
 
     const nombre = norm(part, ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"]);
     const telefono = norm(part, ["telefono","telefono1","telefono_1","celular","contacto"]);
@@ -307,21 +278,18 @@ async function cargarReclutamientos() {
     function okBool(val){ return val === true || val === 'true' || val === 'OK'; }
     const encuadre = okBool(r.estado) ? 'OK' : '-';
     const inicial = okBool(r.efectividad) ? 'OK' : '-';
-    // antes: cálculo de `monadica` basado en tiempo/Duration (provoca OK cuando tiempo = 00:00:00)
-    // ahora: marcar OK solo si hay fecha real de evaluación monádica válida
-    let monadica = "-";
-    // posible origen de la fecha monádica: campo array `fecha_monadica` o campo simple `fecha_real_evaluacion_monadica`
-    const fechaMonadicaRaw = Array.isArray(r.fecha_monadica) ? r.fecha_monadica[0] : (r.fecha_real_evaluacion_monadica || r.fecha_monadica);
-    if (fechaMonadicaRaw) {
-      const s = String(fechaMonadicaRaw).trim();
-      // excluir fechas inválidas/placeholder comunes: vacío, "0001-01-01", "1970-01-01" o valores no útiles
-      if (s && !s.startsWith("0001") && !s.startsWith("1970") && s !== "0000-00-00") {
-        monadica = "OK";
+    let monadica = '-';
+    if (Array.isArray(r.tiempo_monadica_muestras) && r.tiempo_monadica_muestras.length > 0) {
+      const first = r.tiempo_monadica_muestras[0];
+      if (first && typeof first === 'object' && 'Duration' in first) {
+        if (Number(first.Duration) > 0) monadica = 'OK';
+      } else {
+        monadica = 'OK';
       }
     }
   const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
 
-  return `<tr class="recl-row" data-recl-key="${escapeHTML(rowKey)}">
+    return `<tr class="recl-row" data-id-recl="${escapeHTML(r.id)}">
       <td>${escapeHTML(nombre)}</td>
       <td>${escapeHTML(telefono)}</td>
   <td>${escapeHTML(proyectoNombre)}</td>
@@ -337,8 +305,8 @@ async function cargarReclutamientos() {
 
   tbody.querySelectorAll(".recl-row").forEach(tr => {
     tr.addEventListener("click", () => {
-      const key = tr.getAttribute("data-recl-key");
-      openReclutamientoModal(key);
+      const idRecl = tr.getAttribute("data-id-recl");
+      openReclutamientoModal(Number(idRecl));
     });
   });
 
@@ -366,7 +334,6 @@ let modalState = {
 // Si ves que ahora se suman horas incorrectas ajusta este valor.
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
-const DEBUG_UI = true; // activar panel debug en modal
 
 function applyTimeOffset(dateStr){
   if(!dateStr) return null;
@@ -421,37 +388,13 @@ function openReclutamientoModal(reclId) {
 
   const triple = reclIndex.get(reclId);
   if (!triple) {
-    // Fallback: reconstruir usando IDs del key
-    try {
-      const [ridStr, bdidStr, pidStr] = String(reclKey).split('|');
-      const token = sessionStorage.getItem('token');
-      const rid = ridStr ? Number(ridStr) : null;
-      const bdid = bdidStr ? Number(bdidStr) : null;
-      const pid = pidStr ? Number(pidStr) : null;
-      const reclutamiento = rid ? (await getReclutamientoById(rid, token)) : null;
-      const bdProyecto = bdid ? (await getBdProyecto(bdid, token)) : null;
-      const participante = pid ? (await getParticipante(pid, token)) : null;
-      let hijo = null;
-      if (bdProyecto) {
-        const hid = bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo;
-        hijo = hid ? (await getHijo(hid, token)) : null;
-      }
-      triple = { reclutamiento, bdProyecto, participante, hijo, proyecto: null };
-    } catch (err) {
-      console.warn('No data para reclutamiento (fallback)', reclKey, err);
-      return;
-    }
+    console.warn("No data para reclutamiento", reclId);
+    return;
   }
   const { reclutamiento, bdProyecto, participante, hijo } = triple;
   modalState.reclutamientoId = reclutamiento.id;
   modalState.bdProyectoId = bdProyecto ? (bdProyecto.id_bdproyecto || bdProyecto.id) : null;
   modalState.participanteId = participante ? (participante.id || participante.id_participante || participante.idParticipante) : null;
-  // Guardar hijoId para PUT de BDHijos
-  modalState.hijoId = null;
-  if (bdProyecto) {
-    const hid = bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo;
-    if (hid) modalState.hijoId = hid;
-  }
 
   const template = document.getElementById("popupFormTemplate");
   if (!template) return;
@@ -476,15 +419,6 @@ function openReclutamientoModal(reclId) {
       hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
       delete hijoCopy.fecha_nacimiento;
     }
-    // Evitar que el documento del hijo sobrescriba el del participante
-    if (hijoCopy.documento && combined.documento && hijoCopy.documento !== combined.documento) {
-      hijoCopy.documento_bebe = hijoCopy.documento;
-      delete hijoCopy.documento;
-    }
-    if (hijoCopy.cedula && combined.documento && hijoCopy.cedula !== combined.documento) {
-      hijoCopy.cedula_bebe = hijoCopy.cedula;
-      delete hijoCopy.cedula;
-    }
     Object.assign(combined, hijoCopy); // ahora no sobreescribe la del participante
   }
 
@@ -499,49 +433,6 @@ function openReclutamientoModal(reclId) {
   }
 
   console.log("[COMBINED]", combined);
-
-  // DEBUG panel con IDs y URLs de la API
-  if (DEBUG_UI) {
-    const modalBody = document.getElementById("modalBodyContent");
-    const pathBD = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
-    const rid = reclutamiento?.id ?? '';
-    const bdid = (bdProyecto && (bdProyecto.id_bdproyecto || bdProyecto.id)) || '';
-    const pid = (participante && (participante.id || participante.id_participante || participante.idParticipante)) || '';
-    const hid = (bdProyecto && (bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo)) || '';
-    let projId = bdProyecto ? (bdProyecto.id_proyecto || bdProyecto.idProyecto) : '';
-    if (!projId && bdProyecto && bdProyecto.proyecto && /^\d+$/.test(String(bdProyecto.proyecto))) projId = Number(bdProyecto.proyecto);
-    const debugBox = document.createElement('div');
-    debugBox.className = 'alert alert-secondary py-2 px-3 mb-2';
-    debugBox.style.fontSize = '12px';
-    debugBox.innerHTML = `
-      <div><strong>DEBUG</strong></div>
-      <div>reclutamientoId: ${escapeHTML(rid)}</div>
-      <div>bdProyectoId: ${escapeHTML(bdid)}</div>
-      <div>participanteId: ${escapeHTML(pid)}</div>
-      <div>hijoId: ${escapeHTML(hid)}</div>
-      <div>proyectoId: ${escapeHTML(projId ?? '')}</div>
-      <hr class="my-1" />
-      <div>GET URLs:</div>
-      <div>${escapeHTML(`${API_BASE}/reclutamientos/${rid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/${pathBD}/${bdid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/participantes/${pid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/hijos/${hid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/proyectos/${projId ?? ''}`)}</div>
-      <hr class="my-1" />
-  <div>PUT URLs:</div>
-      <div>${escapeHTML(`${API_BASE}/reclutamientos/${rid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/participantes/${pid}`)}</div>
-      <div>${escapeHTML(`${API_BASE}/${pathBD}/${bdid}`)}</div>
-  <div>${escapeHTML(`${API_BASE}/hijos/${hid}`)}</div>
-    `;
-    // Insertar arriba del formulario
-    const formNode = document.getElementById('popupDynamicForm');
-    if (formNode && formNode.parentNode === modalBody) {
-      modalBody.insertBefore(debugBox, formNode);
-    } else {
-      modalBody.prepend(debugBox);
-    }
-  }
 
   // Calcular edad solo del PARTICIPANTE: usar la fecha_nacimiento que quedó tras merge (no la del bebé renombrada)
   const birthKeys = ["fecha_nacimiento"]; // ya no incluye la del bebé
@@ -559,22 +450,6 @@ function openReclutamientoModal(reclId) {
       if (age >= 0 && age < 130) combined.edad = String(age); // asignar edad estimada
     }
   }
-
-  // Calcular meses del BEBÉ a partir de bebe_nacimiento/fecha_nacimiento_bebe/nacimiento
-  (function computeBebeMeses(){
-    const bebeDob = combined.bebe_nacimiento || combined.fecha_nacimiento_bebe || combined.nacimiento;
-    if (!bebeDob) return;
-    const d = new Date(bebeDob);
-    if (isNaN(d.getTime())) return;
-    const today = new Date();
-    let months = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
-    if (today.getDate() < d.getDate()) months -= 1;
-    if (months < 0) months = 0;
-    // Solo establecer si no viene ya uno válido
-    if (!combined.bebe_edad_meses || combined.bebe_edad_meses === '' || Number.isNaN(Number(combined.bebe_edad_meses))) {
-      combined.bebe_edad_meses = String(months);
-    }
-  })();
 
   // Derivar hora y hora_final desde fechas si faltan
   function extractTime(str){
@@ -1242,9 +1117,7 @@ async function handleModalSave(e) {
   const changed = {};
   form.querySelectorAll("[data-field]").forEach(inp => {
     const key = inp.getAttribute("data-field");
-  // Saltar campos derivados que no deben guardarse directamente
-  if (key === 'bebe_edad_meses') return;
-  if (modalState.originalValues[key] !== inp.value) {
+    if (modalState.originalValues[key] !== inp.value) {
       const backendKey = saveNameOverride[key] || key;
       changed[backendKey] = inp.value;
     }
@@ -1257,23 +1130,15 @@ async function handleModalSave(e) {
   }
 
   const participanteKeys = new Set([
-    "nombre_participante","telefono_1","telefono_2","telefono_3","correo_electronico","barrio","direccion",
-    "ciudad","nacionalidad","edad","documento", "sexo", "ciudad", "nse", "tipo_vivienda", "origen_dato",
-    "fecha_registro", "fecha_nacimiento"
-  ]);
-  const hijoKeys = new Set([
-    // Campos de BDHijos según API
-    "nombre_hijo","nombre","sexo","tipo_documento","fecha_nacimiento","documento","id_participante"
+    "nombre_participante","telefono","telefono2","telefono3","correo","barrio","direccion",
+    "ciudad","nacionalidad","edad","cedula","viaje_2meses","bebe_nombre",
+    "bebe_nacimiento","bebe_edad_meses","bebe_sexo","crema_marca",
+    "crema_frecuencia","otra_crema_si_no",
+    "otra_crema_marca","otra_crema_marca_referencia","otra_crema_razones",
+    "otra_crema_frecuencia","origen","nse"
   ]);
   const bdProyectoKeys = new Set([
-    "id_hijo", "id_bdproyecto", "id_participante", "id_proyecto", "estado_participante",
-    "p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14",
-    "p15","p16","p17","p18","p19","p20","p21","p22","p23","p24","p25","p26","p27",
-    "p28","p29","p30","p31","p32","p33","p34","p35","p36","p37","p38","p39","p40",
-    "p41","p42","p43","p44","p45","p46","p47","p48","p49","p50","p51","p52","p53",
-  "p54","p55","p56","p57","p58","p59","p60","p61", "documentos", "observaciones", 
-    "observaciones_supervisora", "observaciones_docu", "contacto", "conclusion_1",
-    "conclusion_2", "conclusion_3"
+    "proyecto","observaciones_bono" // profesional eliminado
   ]);
   const reclutamientoKeys = new Set([
     "fecha_asignacion_gestora","fecha_asignacion_supervisora","fecha_realizacion_profesional",
@@ -1281,48 +1146,42 @@ async function handleModalSave(e) {
     "fecha_real","hora",/* "link_entrevista" <-- eliminado, se mapea a link */ "efectividad","tiempo_entrevista_inicial",
     "calificacion_tiro_blanco","fecha_entrega_producto","fecha_recibo",
     "tiempo_estatus_recibo","confirmacion_verbal","fecha_ideal_inicio_muestra",
-  "fecha_inicio_muestra","fecha_inicio_muestras","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso","fecha_seg_muestras",
+    "fecha_inicio_muestra","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso",
     "fecha_ideal_evaluacion_monadica","fecha_real_evaluacion_monadica",
-  "tiempo_evaluacion_monadica","tiempo_monadica_muestras","irritacion_bebe_primer_producto",
+    "tiempo_evaluacion_monadica","irritacion_bebe_primer_producto",
     "fecha_ideal_min_final","fecha_ideal_max_final","fecha_entrevista_final",
-  "hora_final","status_efectividad_final","modalidad_entrevista_final","modalidad_entrevista",
-  "tiempo_entrevista_final","tiempo_final","calificacion_tiro_blanco_final",
+    "hora_final","status_efectividad_final","modalidad_entrevista_final",
+    "tiempo_entrevista_final","calificacion_tiro_blanco_final",
     "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
     "fecha_ideal_envio_admin","fecha_envio_real_admin",
   "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
   "observaciones","observaciones_bono",
     // Añadidos backend para evitar warnings tras alias
-  "fecha_e_inicial","fecha_realizacion_p","fecha_monadica","tiempo_e_inicial","tiempo_final"
+    "fecha_e_inicial","fecha_realizacion_p"
   ]);
 
   const payloadParticipante = {};
-  const payloadBdHijo = {};
   const payloadBdProyecto = {};
   const payloadReclutamientoPartial = {};
 
   Object.entries(changed).forEach(([origKey, val]) => {
     let k = origKey;
-  if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
+    if (['estado_encuadre','efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
       if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
     }
 
     // Alias UI -> backend
-  if (k === 'link_entrevista') k = 'link';
+    if (k === 'link_entrevista') k = 'link';
   if (k === 'estado_encuadre') k = 'estado';
     // NUEVOS ALIAS para que las fechas se guarden correctamente
-  if (k === 'fecha_real') k = 'fecha_e_inicial';
+    if (k === 'fecha_real') k = 'fecha_e_inicial';
     if (k === 'fecha_realizacion_profesional') k = 'fecha_realizacion_p';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
     if (k === 'observaciones_bono') k = 'observaciones';
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
-  if (k === 'fecha_inicio_muestra') k = 'fecha_inicio_muestras';
-  if (k === 'fecha_seguimiento_real_uso') k = 'fecha_seg_muestras';
-  if (k === 'tiempo_entrevista_inicial') k = 'tiempo_e_inicial';
-  if (k === 'tiempo_entrevista_final') k = 'tiempo_final';
-  if (k === 'tiempo_evaluacion_monadica') k = 'tiempo_monadica_muestras';
 
     // Normalizar intervalos
-    if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
+  if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
       const norm = normalizeInterval(val);
       if (norm && INTERVAL_REGEX.test(norm)) {
         val = norm;
@@ -1334,11 +1193,9 @@ async function handleModalSave(e) {
 
   if (participanteKeys.has(k)) {
       payloadParticipante[k] = val;
-    } else if (hijoKeys.has(k)) {
-      payloadBdHijo[k] = val;
     } else if (bdProyectoKeys.has(k)) {
       payloadBdProyecto[k] = val;
-  } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final','fecha_inicio_muestras','fecha_seg_muestras','tiempo_e_inicial','tiempo_final','tiempo_monadica_muestras'].includes(k)) {
+    } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final'].includes(k)) {
       payloadReclutamientoPartial[k] = val;
     } else {
       console.warn("Campo sin destino:", origKey, "->", k);
@@ -1346,182 +1203,24 @@ async function handleModalSave(e) {
   });
 
   const requests = [];
-
-  // Para participante: construir payload completo
-if (modalState.participanteId && Object.keys(payloadParticipante).length) {
-  const originalParticipante = await getParticipante(modalState.participanteId, token) || {};
-  
-  // Lista de campos posibles del participante (basado en tu API)
-  const fullPayloadParticipante = {
-    id_participante: originalParticipante.id_participante ?? null,
-    nombre_participante: originalParticipante.nombre_participante ?? null,
-    telefono_1: originalParticipante.telefono_1 ?? null,
-    telefono_2: originalParticipante.telefono_2 ?? null,
-    telefono_3: originalParticipante.telefono_3 ?? null,
-    correo_electronico: originalParticipante.correo_electronico ?? null,
-    barrio: originalParticipante.barrio ?? null,
-    direccion: originalParticipante.direccion ?? null,
-    ciudad: originalParticipante.ciudad ?? null,
-    nacionalidad: originalParticipante.nacionalidad ?? null,
-    fecha_nacimiento: originalParticipante.fecha_nacimiento ?? null,
-    tipo_vivienda: originalParticipante.tipo_vivienda ?? null,
-    fecha_registro: originalParticipante.fecha_registro ?? null,
-    sexo: originalParticipante.sexo ?? null,
-    origen_dato: originalParticipante.origen_dato ?? null,
-    nse: originalParticipante.nse ?? null,
-    // Agrega cualquier otro campo que tu API espere
-  };
-
-  // Sobrescribir con cambios
-  Object.assign(fullPayloadParticipante, payloadParticipante);
-
-  console.log('[PUT participante payload]', fullPayloadParticipante);
-  requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(fullPayloadParticipante)
-  }).then(r => ({ target: "participante", r })));
-}
-
-// Para bdhijo: construir payload completo
-if (modalState.hijoId && Object.keys(payloadBdHijo).length) {
-  const originalHijo = await getHijo(modalState.hijoId, token) || {};
-  const fullPayloadHijo = {
-    id: originalHijo.id ?? modalState.hijoId,
-    nombre_hijo: originalHijo.nombre_hijo ?? originalHijo.nombre ?? null,
-    fecha_nacimiento: originalHijo.fecha_nacimiento ?? null,
-    sexo: originalHijo.sexo ?? null,
-    tipo_documento: originalHijo.tipo_documento ?? null,
-    documento: originalHijo.documento ?? null,
-    id_participante: originalHijo.id_participante ?? (modalState.participanteId || null),
-  };
-  // Resolver alias hacia campos backend esperados
-  if (payloadBdHijo.nombre) { payloadBdHijo.nombre_hijo = payloadBdHijo.nombre; delete payloadBdHijo.nombre; }
-
-  Object.assign(fullPayloadHijo, payloadBdHijo);
-
-  console.log('[PUT bdhijo payload]', fullPayloadHijo);
-  requests.push(fetch(`${API_BASE}/hijos/${modalState.hijoId}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(fullPayloadHijo)
-  }).then(r => ({ target: "bdhijo", r })));
-}
-
-// Para bdproyecto: incluir TODOS los campos para mantener estado completo
-if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
-  const originalBdProyecto = await getBdProyecto(modalState.bdProyectoId, token) || {};
-  
-  const fullPayloadBdProyecto = {
-    id_bdproyecto: originalBdProyecto.id_bdproyecto ?? null,
-    id_participante: originalBdProyecto.id_participante ?? null,
-    id_proyecto: originalBdProyecto.id_proyecto ?? null,
-    id_hijo: (originalBdProyecto.id_hijo != null) ? parseInt(originalBdProyecto.id_hijo, 10) : null,
-    estado_participante: originalBdProyecto.estado_participante ?? null,
-    p1: originalBdProyecto.p1 ?? null,
-    p2: originalBdProyecto.p2 ?? null,
-    p3: originalBdProyecto.p3 ?? null,
-    p4: originalBdProyecto.p4 ?? null,
-    p5: originalBdProyecto.p5 ?? null,
-    p6: originalBdProyecto.p6 ?? null,
-    p7: originalBdProyecto.p7 ?? null,
-    p8: originalBdProyecto.p8 ?? null,
-    p9: originalBdProyecto.p9 ?? null,
-    p10: originalBdProyecto.p10 ?? null,
-    p11: originalBdProyecto.p11 ?? null,
-    p12: originalBdProyecto.p12 ?? null,
-    p13: originalBdProyecto.p13 ?? null,
-    p14: originalBdProyecto.p14 ?? null,
-    p15: originalBdProyecto.p15 ?? null,
-    p16: originalBdProyecto.p16 ?? null,
-    p17: originalBdProyecto.p17 ?? null,
-    p18: originalBdProyecto.p18 ?? null,
-    p19: originalBdProyecto.p19 ?? null,
-    p20: originalBdProyecto.p20 ?? null,
-    p21: originalBdProyecto.p21 ?? null,
-    p22: originalBdProyecto.p22 ?? null,
-    p23: originalBdProyecto.p23 ?? null,
-    p24: originalBdProyecto.p24 ?? null,
-    p25: originalBdProyecto.p25 ?? null,
-    p26: originalBdProyecto.p26 ?? null,
-    p27: originalBdProyecto.p27 ?? null,
-    p28: originalBdProyecto.p28 ?? null,
-    p29: originalBdProyecto.p29 ?? null,
-    p30: originalBdProyecto.p30 ?? null,
-    p31: originalBdProyecto.p31 ?? null,
-    p32: originalBdProyecto.p32 ?? null,
-    p33: originalBdProyecto.p33 ?? null,
-    p34: originalBdProyecto.p34 ?? null,
-    p35: originalBdProyecto.p35 ?? null,
-    p36: originalBdProyecto.p36 ?? null,
-    p37: originalBdProyecto.p37 ?? null,
-    p38: originalBdProyecto.p38 ?? null,
-    p39: originalBdProyecto.p39 ?? null,
-    p40: originalBdProyecto.p40 ?? null,
-    p41: originalBdProyecto.p41 ?? null,
-    p42: originalBdProyecto.p42 ?? null,
-    p43: originalBdProyecto.p43 ?? null,
-    p44: originalBdProyecto.p44 ?? null,
-    p45: originalBdProyecto.p45 ?? null,
-    p46: originalBdProyecto.p46 ?? null,
-    p47: originalBdProyecto.p47 ?? null,
-    p48: originalBdProyecto.p48 ?? null,
-    p49: originalBdProyecto.p49 ?? null,
-    p50: originalBdProyecto.p50 ?? null,
-    p51: originalBdProyecto.p51 ?? null,
-    p52: originalBdProyecto.p52 ?? null,
-    p53: originalBdProyecto.p53 ?? null,
-    p54: originalBdProyecto.p54 ?? null,
-    p55: originalBdProyecto.p55 ?? null,
-    p56: originalBdProyecto.p56 ?? null,
-    p57: originalBdProyecto.p57 ?? null,
-    p58: originalBdProyecto.p58 ?? null,
-    p59: originalBdProyecto.p59 ?? null,
-    p60: originalBdProyecto.p60 ?? null,
-    p61: originalBdProyecto.p61 ?? null,
-    documentos: originalBdProyecto.documentos ?? null,
-    observaciones: originalBdProyecto.observaciones ?? null,
-    observaciones_supervisora: originalBdProyecto.observaciones_supervisora ?? null,
-    observaciones_docu: originalBdProyecto.observaciones_docu ?? null,
-    contacto: originalBdProyecto.contacto ?? null,
-    conclusion_1: originalBdProyecto.conclusion_1 ?? null,
-    conclusion_2: originalBdProyecto.conclusion_2 ?? null,
-    conclusion_3: originalBdProyecto.conclusion_3 ?? null,
-  };
-
-  Object.assign(fullPayloadBdProyecto, payloadBdProyecto);
-
-  // Normalizar id_hijo para que sea compatible con sql.NullInt64 en el backend
-  // (backend parece esperar objeto {Int64: number, Valid: true} o null)
-  if (fullPayloadBdProyecto.hasOwnProperty('id_hijo')) {
-    const v = fullPayloadBdProyecto.id_hijo;
-    if (v === null || v === '' || v === undefined) {
-      fullPayloadBdProyecto.id_hijo = null;
-    } else {
-      const n = Number(v);
-      if (!Number.isNaN(n)) {
-        fullPayloadBdProyecto.id_hijo = { Int64: Math.trunc(n), Valid: true };
-      } else {
-        // valor no convertible -> enviar null para evitar 400
-        fullPayloadBdProyecto.id_hijo = null;
-      }
-    }
-  } else {
-    // asegurar que siempre se envíe explicitamente null si no existe
-    fullPayloadBdProyecto.id_hijo = fullPayloadBdProyecto.id_hijo ?? null;
+  if (modalState.participanteId && Object.keys(payloadParticipante).length) {
+  console.log('[PUT participante payload]', payloadParticipante);
+    requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(payloadParticipante)
+    }).then(r => ({target:"participante", r})));
   }
-
-  console.log('[PUT bdproyecto payload]', fullPayloadBdProyecto);
-  const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
-  requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(fullPayloadBdProyecto)
-  }).then(r => ({ target: "bdproyecto", r })));
-}
-
-// Para reclutamiento: payload parcial (solo campos modificados)
-if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
+  if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
+    const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+  console.log('[PUT bdproyecto payload]', payloadBdProyecto);
+    requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
+      method:"PUT",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(payloadBdProyecto)
+    }).then(r => ({target:"bdproyecto", r})));
+  }
+  if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
     // Construir payload completo requerido por UpdateReclutamiento
     const original = await getReclutamientoById(modalState.reclutamientoId, token) || {};
 
@@ -1642,20 +1341,6 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
       fullPayload.fecha_despacho = origArr.filter((v,i) => v || i < 2);
       delete fullPayload.fecha_entrega_producto;
       delete fullPayload.fecha_recibo;
-    }
-
-    // Mapear fecha_inicio_muestra (UI) a fecha_inicio_muestras[0]
-    if ('fecha_inicio_muestras' in payloadReclutamientoPartial) {
-      const origArr = Array.isArray(original.fecha_inicio_muestras) ? [...original.fecha_inicio_muestras] : [];
-      origArr[0] = payloadReclutamientoPartial['fecha_inicio_muestras'] || null;
-      fullPayload.fecha_inicio_muestras = origArr;
-    }
-
-    // Mapear fecha_seguimiento_real_uso (UI) a fecha_seg_muestras[0]
-    if ('fecha_seg_muestras' in payloadReclutamientoPartial) {
-      const origSeg = Array.isArray(original.fecha_seg_muestras) ? [...original.fecha_seg_muestras] : [];
-      origSeg[0] = payloadReclutamientoPartial['fecha_seg_muestras'] || null;
-      fullPayload.fecha_seg_muestras = origSeg;
     }
 
     // --- Normalizar fechas: Backend espera timestamps con hora (ej: 2006-01-02T15:04:05Z) ---
@@ -1780,16 +1465,9 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
     cacheReclutamientos.clear();
     await cargarReclutamientos();
     modalInstance.hide();
-    // Añadir alerta aquí
-    Swal.fire({
-        icon: 'success',
-        title: '¡Guardado exitoso!',
-        text: 'Los datos han sido guardados correctamente.',
-        confirmButtonColor: '#9b51e0'
-    });
-} else {
+  } else {
     alert("Algunos cambios fallaron (ver consola).");
-}
+  }
 }
 
 document.addEventListener("DOMContentLoaded", cargarReclutamientos);
