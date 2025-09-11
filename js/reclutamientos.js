@@ -106,23 +106,24 @@ async function getProyecto(id, token) {
 
 // ---------- Mapeos para el modal ----------
 const fieldMapping = {
-  origen: ["origen","origen_dato","fuente_origen"],
-  nombre_apellido: ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"],
-  cedula: ["cedula","documento","id_documento"],
-  nacionalidad: ["nacionalidad","pais_origen"],
+  origen: ["origen_dato"],
+  nombre_apellido: ["nombre_participante"],
+  cedula: ["documento"],
+  nacionalidad: ["nacionalidad"],
   edad: ["edad"],
-  direccion: ["direccion","direccion_residencia"],
+  direccion: ["direccion"],
   barrio: ["barrio"],
-  nse: ["nse","estrato","nivel_socioeconomico"],
-  correo: ["correo_electronico","email","email_principal"],
-  telefono1: ["telefono_1","telefono1","telefono","celular","contacto"],
-  telefono2: ["telefono_2","telefono2"],
-  telefono3: ["telefono_3","telefono3"],
-  viaje_2meses: ["viaje_2meses"],
-  bebe_nombre: ["bebe_nombre","nombre_hijo","nombre_bebe"],
+  fecha_nacimiento: ["fecha_nacimiento"],
+  nse: ["nse"],
+  correo: ["correo_electronico"],
+  telefono1: ["telefono_1"],
+  telefono2: ["telefono_2"],
+  telefono3: ["telefono_3"],
+  bebe_nombre: ["nombre_hijo"],
   // quitar 'fecha_nacimiento' para no tomar la del participante como la del bebé
   bebe_nacimiento: ["bebe_nacimiento","fecha_nacimiento_bebe","nacimiento"],
-  bebe_edad_meses: ["p4","bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
+  bebe_edad_meses: ["bebe_edad_meses"], // si viene en días (valor grande) se convierte a meses visualmente
+  bebe_edad_primer: ["p4"], // si viene en días (valor grande) se convierte a meses visualmente
   bebe_sexo: ["sexo","sexo_bebe"],
   crema_marca: ["p23"],
   crema_frecuencia: ["p25"],
@@ -182,9 +183,25 @@ const fieldMapping = {
 // Override de nombres al guardar
 const saveNameOverride = {
   nombre_apellido: "nombre_participante",
-  telefono1: "telefono",
-  telefono2: "telefono2",
-  telefono3: "telefono3"
+  fecha_nacimiento: "fecha_nacimiento",
+  cedula: "documento",
+  nacionalidad: "nacionalidad",
+  direccion: "direccion",
+  barrio: "barrio",
+  nse: "nse",
+  correo: "correo_electronico",
+  telefono1: "telefono_1",
+  telefono2: "telefono_2",
+  telefono3: "telefono_3",
+  origen: "origen_dato",
+  bebe_edad_primer: "p4",  // bebe_edad_primer -> p4
+  crema_marca: "p23",      // crema_marca -> p23
+  crema_frecuencia: "p25", // crema_frecuencia -> p25
+  otra_crema_si_no: "p8",  // otra_crema_si_no -> p8
+  otra_crema_marca: "p9",  // otra_crema_marca -> p9
+  otra_crema_marca_referencia: "p10", // otra_crema_marca_referencia -> p10
+  otra_crema_razones: "p11", // otra_crema_razones -> p11
+  otra_crema_frecuencia: "p12", 
 };
 
 function resolveValue(key, combined) {
@@ -685,15 +702,19 @@ async function handleModalSave(e) {
   }
 
   const participanteKeys = new Set([
-    "nombre_participante","telefono","telefono2","telefono3","correo","barrio","direccion",
-    "ciudad","nacionalidad","edad","cedula","viaje_2meses","bebe_nombre",
-    "bebe_nacimiento","bebe_edad_meses","bebe_sexo","crema_marca",
-    "crema_frecuencia","otra_crema_si_no",
-    "otra_crema_marca","otra_crema_marca_referencia","otra_crema_razones",
-    "otra_crema_frecuencia","origen","nse"
+    "nombre_participante","telefono_1","telefono_2","telefono_3","correo_electronico","barrio","direccion",
+    "ciudad","nacionalidad","edad","documento", "sexo", "ciudad", "nse", "tipo_vivienda", "origen_dato",
+    "fecha_registro", "fecha_nacimiento"
   ]);
   const bdProyectoKeys = new Set([
-    "proyecto","observaciones_bono" // profesional eliminado
+    "id_hijo", "id_bdproyecto", "id_participante", "id_proyecto", "estado_participante",
+    "p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14",
+    "p15","p16","p17","p18","p19","p20","p21","p22","p23","p24","p25","p26","p27",
+    "p28","p29","p30","p31","p32","p33","p34","p35","p36","p37","p38","p39","p40",
+    "p41","p42","p43","p44","p45","p46","p47","p48","p49","p50","p51","p52","p53",
+    "p54","p55","p56","p57","p58","p59","p60","p61", "documentos", "observaciones", 
+    "observaciones_supervisora", "observaciones_docu", "contacto", "conclusion_1",
+    "conclusion_2", "conclusion_3"
   ]);
   const reclutamientoKeys = new Set([
     "fecha_asignacion_gestora","fecha_asignacion_supervisora","fecha_realizacion_profesional",
@@ -758,24 +779,137 @@ async function handleModalSave(e) {
   });
 
   const requests = [];
-  if (modalState.participanteId && Object.keys(payloadParticipante).length) {
-  console.log('[PUT participante payload]', payloadParticipante);
-    requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
-      method:"PUT",
-      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
-      body:JSON.stringify(payloadParticipante)
-    }).then(r => ({target:"participante", r})));
-  }
-  if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
-    const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
-  console.log('[PUT bdproyecto payload]', payloadBdProyecto);
-    requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
-      method:"PUT",
-      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
-      body:JSON.stringify(payloadBdProyecto)
-    }).then(r => ({target:"bdproyecto", r})));
-  }
-  if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
+
+  // Para participante: construir payload completo
+if (modalState.participanteId && Object.keys(payloadParticipante).length) {
+  const originalParticipante = await getParticipante(modalState.participanteId, token) || {};
+  
+  // Lista de campos posibles del participante (basado en tu API)
+  const fullPayloadParticipante = {
+    // id_participante: originalParticipante.id_participante ?? null,
+    nombre_participante: originalParticipante.nombre_participante ?? null,
+    telefono_1: originalParticipante.telefono_1 ?? null,
+    telefono_2: originalParticipante.telefono_2 ?? null,
+    telefono_3: originalParticipante.telefono_3 ?? null,
+    correo_electronico: originalParticipante.correo_electronico ?? null,
+    barrio: originalParticipante.barrio ?? null,
+    direccion: originalParticipante.direccion ?? null,
+    ciudad: originalParticipante.ciudad ?? null,
+    nacionalidad: originalParticipante.nacionalidad ?? null,
+    fecha_nacimiento: originalParticipante.fecha_nacimiento ?? null,
+    // tipo_vivienda: originalParticipante.tipo_vivienda ?? null,
+    // fecha_registro: originalParticipante.fecha_registro ?? null,
+    sexo: originalParticipante.sexo ?? null,
+    // origen_dato: originalParticipante.origen_dato ?? null,
+    nse: originalParticipante.nse ?? null,
+    // Agrega cualquier otro campo que tu API espere
+  };
+
+  // Sobrescribir con cambios
+  Object.assign(fullPayloadParticipante, payloadParticipante);
+
+  console.log('[PUT participante payload]', fullPayloadParticipante);
+  requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(fullPayloadParticipante)
+  }).then(r => ({ target: "participante", r })));
+}
+
+// Para bdproyecto: si también necesitas payload completo (opcional, pero recomendado si hay errores similares)
+if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
+  const originalBdProyecto = await getBdProyecto(modalState.bdProyectoId, token) || {};
+  
+  const fullPayloadBdProyecto = {
+    // id_bdproyecto: originalBdProyecto.id_bdproyecto ?? null,
+    // id_participante: originalBdProyecto.id_participante ?? null,
+    // id_proyecto: originalBdProyecto.id_proyecto ?? null,
+    // estado_participante: originalBdProyecto.estado_participante ?? null,
+    // p1: originalBdProyecto.p1 ?? null,
+    // p2: originalBdProyecto.p2 ?? null,
+    // p3: originalBdProyecto.p3 ?? null,
+    p4: originalBdProyecto.p4 ?? null,
+    // p5: originalBdProyecto.p5 ?? null,
+    // p6: originalBdProyecto.p6 ?? null,
+    // p7: originalBdProyecto.p7 ?? null,
+    p8: originalBdProyecto.p8 ?? null,
+    p9: originalBdProyecto.p9 ?? null,
+    p10: originalBdProyecto.p10 ?? null,
+    p11: originalBdProyecto.p11 ?? null,
+    p12: originalBdProyecto.p12 ?? null,
+    // p13: originalBdProyecto.p13 ?? null,
+    // p14: originalBdProyecto.p14 ?? null,
+    // p15: originalBdProyecto.p15 ?? null,
+    // p16: originalBdProyecto.p16 ?? null,
+    // p17: originalBdProyecto.p17 ?? null,
+    // p18: originalBdProyecto.p18 ?? null,
+    // p19: originalBdProyecto.p19 ?? null,
+    // p20: originalBdProyecto.p20 ?? null,
+    // p21: originalBdProyecto.p21 ?? null,
+    // p22: originalBdProyecto.p22 ?? null,
+    p23: originalBdProyecto.p23 ?? null,
+    // p24: originalBdProyecto.p24 ?? null,
+    p25: originalBdProyecto.p25 ?? null,
+    // p26: originalBdProyecto.p26 ?? null,
+    // p27: originalBdProyecto.p27 ?? null,
+    // p28: originalBdProyecto.p28 ?? null,
+    // p29: originalBdProyecto.p29 ?? null,
+    // p30: originalBdProyecto.p30 ?? null,
+    // p31: originalBdProyecto.p31 ?? null,
+    // p32: originalBdProyecto.p32 ?? null,
+    // p33: originalBdProyecto.p33 ?? null,
+    // p34: originalBdProyecto.p34 ?? null,
+    // p35: originalBdProyecto.p35 ?? null,
+    // p36: originalBdProyecto.p36 ?? null,
+    // p37: originalBdProyecto.p37 ?? null,
+    // p38: originalBdProyecto.p38 ?? null,
+    // p39: originalBdProyecto.p39 ?? null,
+    // p40: originalBdProyecto.p40 ?? null,
+    // p41: originalBdProyecto.p41 ?? null,
+    // p42: originalBdProyecto.p42 ?? null,
+    // p43: originalBdProyecto.p43 ?? null,
+    // p44: originalBdProyecto.p44 ?? null,
+    // p45: originalBdProyecto.p45 ?? null,
+    // p46: originalBdProyecto.p46 ?? null,
+    // p47: originalBdProyecto.p47 ?? null,
+    // p48: originalBdProyecto.p48 ?? null,
+    // p49: originalBdProyecto.p49 ?? null,
+    // p50: originalBdProyecto.p50 ?? null,
+    // p51: originalBdProyecto.p51 ?? null,
+    // p52: originalBdProyecto.p52 ?? null,
+    // p53: originalBdProyecto.p53 ?? null,
+    // p54: originalBdProyecto.p54 ?? null,
+    // p55: originalBdProyecto.p55 ?? null,
+    // p56: originalBdProyecto.p56 ?? null,
+    // p57: originalBdProyecto.p57 ?? null,
+    // p58: originalBdProyecto.p58 ?? null,
+    // p59: originalBdProyecto.p59 ?? null,
+    // p60: originalBdProyecto.p60 ?? null,
+    // p61: originalBdProyecto.p61 ?? null,
+    // documentos: originalBdProyecto.documentos ?? null,
+    // observaciones: originalBdProyecto.observaciones ?? null,
+    // observaciones_supervisora: originalBdProyecto.observaciones_supervisora ?? null,
+    // observaciones_docu: originalBdProyecto.observaciones_docu ?? null,
+    // contacto: originalBdProyecto.contacto ?? null,
+    // conclusion_1: originalBdProyecto.conclusion_1 ?? null,
+    // conclusion_2: originalBdProyecto.conclusion_2 ?? null,
+    // conclusion_3: originalBdProyecto.conclusion_3 ?? null,
+    // id_hijo: originalBdProyecto.id_hijo ?? null
+  };
+
+  Object.assign(fullPayloadBdProyecto, payloadBdProyecto);
+
+  console.log('[PUT bdproyecto payload]', fullPayloadBdProyecto);
+  const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+  requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(fullPayloadBdProyecto)
+  }).then(r => ({ target: "bdproyecto", r })));
+}
+
+// Para reclutamiento: payload parcial (solo campos modificados)
+if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
     // Construir payload completo requerido por UpdateReclutamiento
     const original = await getReclutamientoById(modalState.reclutamientoId, token) || {};
 

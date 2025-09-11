@@ -230,6 +230,23 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Hacer el botón de guardar sticky en el modal */
+.sticky-save-btn {
+    position: sticky;
+    bottom: 0;
+    background: white; /* Fondo blanco para que no se vea transparente */
+    padding: 1rem 0;
+    border-top: 1px solid #dee2e6; /* Línea sutil para separar */
+    z-index: 10; /* Asegura que esté encima del contenido */
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Sombra sutil para destacar */
+}
+
+/* Ajuste para el modal-body para que no se superponga */
+.modal-body {
+    max-height: calc(100vh - 200px); /* Ajusta la altura máxima para dejar espacio al botón */
+    overflow-y: auto;
+}
+
 @media (max-width: 768px) {
   main { padding: 10px; }
 }
