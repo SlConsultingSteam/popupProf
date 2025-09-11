@@ -1020,9 +1020,16 @@ async function handleModalSave(e) {
     cacheReclutamientos.clear();
     await cargarReclutamientos();
     modalInstance.hide();
-  } else {
+    // Añadir alerta aquí
+    Swal.fire({
+        icon: 'success',
+        title: '¡Guardado exitoso!',
+        text: 'Los datos han sido guardados correctamente.',
+        confirmButtonColor: '#9b51e0'
+    });
+} else {
     alert("Algunos cambios fallaron (ver consola).");
-  }
+}
 }
 
 document.addEventListener("DOMContentLoaded", cargarReclutamientos);
