@@ -417,8 +417,9 @@ function normalizeInterval(val){
   return s; // fallback
 }
 
-async function openReclutamientoModal(reclKey) {
-  let triple = reclIndex.get(reclKey);
+function openReclutamientoModal(reclId) {
+
+  const triple = reclIndex.get(reclId);
   if (!triple) {
     // Fallback: reconstruir usando IDs del key
     try {
@@ -635,19 +636,26 @@ async function openReclutamientoModal(reclKey) {
     }
   }
 
-  const baseRealizacion2 = Array.isArray(combined.fecha_despacho) ? combined.fecha_despacho[1] : null;
-  if (baseRealizacion2) {
+  // Lógica: fecha_ideal_inicio_muestra es un día después de fecha_recibo
+  const baseRecibo = combined.fecha_recibo || (Array.isArray(combined.fecha_despacho) ? combined.fecha_despacho[1] : undefined);
+  if (baseRecibo) {
     if(!combined.fecha_ideal_inicio_muestra || combined.fecha_ideal_inicio_muestra === '') {
-      const calcMin = addDays(baseRealizacion2, 2);
+      const calcMin = addDays(baseRecibo, 1);
       if(calcMin) combined.fecha_ideal_inicio_muestra = calcMin;
     }
     if(!combined.fecha_ideal_seguimiento_uso || combined.fecha_ideal_seguimiento_uso === '') {
-      const calcMin = addDays(baseRealizacion2, 5);
+      const calcMin = addDays(baseRecibo, 4);
       if(calcMin) combined.fecha_ideal_seguimiento_uso = calcMin;
     }
   }
 
-  const baseRealizacion3 = Array.isArray(combined.fecha_inicio_muestras) ? combined.fecha_inicio_muestras[0] : null;
+  // Asignar el valor calculado al input fecha_ideal_inicio_muestra si existe
+  const idealInicioInp = clone.querySelector('[data-field="fecha_ideal_inicio_muestra"]');
+  if (idealInicioInp && combined.fecha_ideal_inicio_muestra) {
+    idealInicioInp.value = combined.fecha_ideal_inicio_muestra;
+  }
+
+  const baseRealizacion3 = combined.fecha_inicio_muestras[0];
   if (baseRealizacion3) {
     if(!combined.fecha_ideal_evaluacion_monadica || combined.fecha_ideal_evaluacion_monadica === '') {
       const calcMin = addDays(baseRealizacion3, 8);
@@ -778,6 +786,443 @@ async function openReclutamientoModal(reclKey) {
       }
     });
   });
+
+  // --- Colores automáticos para fecha_asignacion_supervisora ---
+  const gestoraInp = clone.querySelector('[data-field="fecha_asignacion_gestora"]');
+  const supervisoraInp = clone.querySelector('[data-field="fecha_asignacion_supervisora"]');
+
+    // --- Colores automáticos para fecha_realizacion_profesional ---
+    const realizacionInp = clone.querySelector('[data-field="fecha_realizacion_profesional"]');
+
+    // Esta función compara las fechas y cambia el color del input de fecha_realizacion_profesional
+    function actualizarColorRealizacion() {
+      if (!realizacionInp || !supervisoraInp) return;
+      const fechaRealizacion = realizacionInp.value;
+      const fechaSupervisora = supervisoraInp.value;
+      if (!fechaRealizacion || !fechaSupervisora) {
+        realizacionInp.style.backgroundColor = '';
+        return;
+      }
+      const dRealizacion = new Date(fechaRealizacion);
+      const dSupervisora = new Date(fechaSupervisora);
+      const msPorDia = 24 * 60 * 60 * 1000;
+      const diffDias = Math.floor((dRealizacion - dSupervisora) / msPorDia);
+        if (diffDias > 2) {
+          // fecha_realizacion_profesional es estrictamente más de 2 días mayor: rojo
+          realizacionInp.style.backgroundColor = '#ff4d4d';
+        } else if (diffDias < 0) {
+          // fecha_realizacion_profesional es menor a fecha_asignacion_supervisora: gris
+          realizacionInp.style.backgroundColor = '#9b9b9b';
+        } else {
+          // cualquier otro caso: sin color
+          realizacionInp.style.backgroundColor = '';
+        }
+    }
+
+  // Esta función compara las fechas y cambia el color del input de supervisora
+  function actualizarColorSupervisora() {
+    if (!gestoraInp || !supervisoraInp) return;
+
+    const fechaGestora = gestoraInp.value;
+    const fechaSupervisora = supervisoraInp.value;
+
+    // Si alguna fecha está vacía, no se aplica color
+    if (!fechaGestora || !fechaSupervisora) {
+      supervisoraInp.style.backgroundColor = '';
+      return;
+    }
+
+    // Convertir a objetos Date para comparar solo el día
+    const dGestora = new Date(fechaGestora);
+    const dSupervisora = new Date(fechaSupervisora);
+
+    // Calcular diferencia en días
+    const msPorDia = 24 * 60 * 60 * 1000;
+    const diffDias = Math.floor((dSupervisora - dGestora) / msPorDia);
+
+    if (diffDias < 0) {
+      // Supervisora es antes que gestora: gris
+      supervisoraInp.style.backgroundColor = '#9b9b9b';
+    } else if (diffDias > 2) {
+      // Supervisora es más de 2 días después que gestora: rojo 
+      supervisoraInp.style.backgroundColor = '#ff4d4d';
+    } else {
+      // Mismo día o hasta 2 días después: sin color
+      supervisoraInp.style.backgroundColor = '';
+    }
+  }
+
+  // Actualizar color al cambiar cualquiera de las dos fechas
+  if (gestoraInp && supervisoraInp) {
+    gestoraInp.addEventListener('change', actualizarColorSupervisora);
+    supervisoraInp.addEventListener('change', actualizarColorSupervisora);
+    // Ejecutar al abrir el modal
+    setTimeout(actualizarColorSupervisora, 0);
+  }
+
+    // Actualizar color al cambiar cualquiera de las dos fechas relevantes para fecha_realizacion_profesional
+    if (realizacionInp && supervisoraInp) {
+      realizacionInp.addEventListener('change', actualizarColorRealizacion);
+      supervisoraInp.addEventListener('change', actualizarColorRealizacion);
+      // Ejecutar al abrir el modal
+      setTimeout(actualizarColorRealizacion, 0);
+    }
+
+      // --- Colores automáticos para fecha_ideal_min ---
+      const idealMinInp = clone.querySelector('[data-field="fecha_ideal_min"]');
+      // Función para actualizar color de fecha_ideal_min según fecha_realizacion_profesional
+      function actualizarColorIdealMin() {
+        if (!idealMinInp || !realizacionInp) return;
+        const fechaIdealMin = idealMinInp.value;
+        const fechaRealizacion = realizacionInp.value;
+        if (!fechaIdealMin || !fechaRealizacion) {
+          idealMinInp.style.backgroundColor = '';
+          return;
+        }
+        const dIdealMin = new Date(fechaIdealMin);
+        const dRealizacion = new Date(fechaRealizacion);
+        // Solo gris si es menor, no si es igual
+        if (dIdealMin.getTime() < dRealizacion.getTime()) {
+          idealMinInp.style.backgroundColor = '#9b9b9b';
+        } else {
+          idealMinInp.style.backgroundColor = '';
+        }
+      }
+      if (idealMinInp && realizacionInp) {
+        idealMinInp.addEventListener('change', actualizarColorIdealMin);
+        realizacionInp.addEventListener('change', actualizarColorIdealMin);
+        setTimeout(actualizarColorIdealMin, 0);
+      }
+
+        // Listener y función para color de fecha_ideal_max respecto a fecha_ideal_min
+        const idealMaxInp = clone.querySelector('[data-field="fecha_ideal_max"]');
+        function actualizarColorIdealMax() {
+          if (!idealMaxInp || !idealMinInp) return;
+          const fechaIdealMax = idealMaxInp.value;
+          const fechaIdealMin = idealMinInp.value;
+          if (!fechaIdealMax || !fechaIdealMin) {
+            idealMaxInp.style.backgroundColor = '';
+            return;
+          }
+          const dIdealMax = new Date(fechaIdealMax);
+          const dIdealMin = new Date(fechaIdealMin);
+          const msPorDia = 24 * 60 * 60 * 1000;
+          const diffDias = Math.floor((dIdealMax - dIdealMin) / msPorDia);
+          if (diffDias > 2) {
+            idealMaxInp.style.backgroundColor = '#ff4d4d';
+          } else {
+            idealMaxInp.style.backgroundColor = '';
+          }
+        }
+        if (idealMaxInp && idealMinInp) {
+          idealMaxInp.addEventListener('change', actualizarColorIdealMax);
+          idealMinInp.addEventListener('change', actualizarColorIdealMax);
+          setTimeout(actualizarColorIdealMax, 0);
+        }
+
+          // --- Colores automáticos para fecha_real respecto a fecha_ideal_max ---
+          const realInp = clone.querySelector('[data-field="fecha_real"]');
+          function actualizarColorFechaReal() {
+            if (!realInp || !idealMaxInp || !idealMinInp) return;
+            const fechaReal = realInp.value;
+            const fechaIdealMax = idealMaxInp.value;
+            const fechaIdealMin = idealMinInp.value;
+            if (!fechaReal || !fechaIdealMax || !fechaIdealMin) {
+              realInp.style.backgroundColor = '';
+              return;
+            }
+            const dReal = new Date(fechaReal);
+            const dIdealMax = new Date(fechaIdealMax);
+            const dIdealMin = new Date(fechaIdealMin);
+            if (dReal.getTime() > dIdealMax.getTime()) {
+              realInp.style.backgroundColor = '#ff4d4d';
+            } else if (dReal.getTime() < dIdealMin.getTime()) {
+              realInp.style.backgroundColor = '#9b9b9b';
+            } else {
+              realInp.style.backgroundColor = '';
+            }
+          }
+          if (realInp && idealMaxInp && idealMinInp) {
+            realInp.addEventListener('change', actualizarColorFechaReal);
+            idealMaxInp.addEventListener('change', actualizarColorFechaReal);
+            idealMinInp.addEventListener('change', actualizarColorFechaReal);
+            setTimeout(actualizarColorFechaReal, 0);
+          }
+
+            // --- Colores automáticos para fecha_ideal_inicio_muestra respecto a fecha_recibo ---
+            const reciboInp2 = clone.querySelector('[data-field="fecha_recibo"]');
+            function actualizarColorIdealInicio() {
+              if (!idealInicioInp || !reciboInp2) return;
+              const fechaIdealInicio = idealInicioInp.value;
+              const fechaRecibo = reciboInp2.value;
+              if (!fechaIdealInicio || !fechaRecibo) {
+                idealInicioInp.style.backgroundColor = '';
+                return;
+              }
+              const dIdealInicio = new Date(fechaIdealInicio);
+              const dRecibo = new Date(fechaRecibo);
+              const msPorDia = 24 * 60 * 60 * 1000;
+              const diffDias = Math.floor((dIdealInicio - dRecibo) / msPorDia);
+              if (dIdealInicio.getTime() < dRecibo.getTime()) {
+                idealInicioInp.style.backgroundColor = '#9b9b9b';
+              } else if (diffDias > 1) {
+                idealInicioInp.style.backgroundColor = '#ff4d4d';
+              } else {
+                idealInicioInp.style.backgroundColor = '';
+              }
+            }
+            if (idealInicioInp && reciboInp2) {
+              idealInicioInp.addEventListener('change', actualizarColorIdealInicio);
+              reciboInp2.addEventListener('change', actualizarColorIdealInicio);
+              setTimeout(actualizarColorIdealInicio, 0);
+            }
+
+
+        // --- Colores automáticos para fecha_recibo respecto a fecha_entrega_producto ---
+        const entregaInp = clone.querySelector('[data-field="fecha_entrega_producto"]');
+        const reciboInp = clone.querySelector('[data-field="fecha_recibo"]');
+        function actualizarColorRecibo() {
+          if (!entregaInp || !reciboInp) return;
+          const fechaEntrega = entregaInp.value;
+          const fechaRecibo = reciboInp.value;
+          if (!fechaEntrega || !fechaRecibo) {
+            reciboInp.style.backgroundColor = '';
+            return;
+          }
+          const dEntrega = new Date(fechaEntrega);
+          const dRecibo = new Date(fechaRecibo);
+          const msPorDia = 24 * 60 * 60 * 1000;
+          const diffDias = Math.floor((dRecibo - dEntrega) / msPorDia);
+          if (diffDias > 2) {
+            reciboInp.style.backgroundColor = '#ff4d4d';
+          } else {
+            reciboInp.style.backgroundColor = '';
+          }
+        }
+        if (entregaInp && reciboInp) {
+          entregaInp.addEventListener('change', actualizarColorRecibo);
+          reciboInp.addEventListener('change', actualizarColorRecibo);
+          setTimeout(actualizarColorRecibo, 0);
+        }
+
+       // --- Colores automáticos para fecha_recibo respecto a fecha_entrega_producto ---
+      // Las variables entregaInp y reciboInp ya están declaradas arriba, solo se reutilizan aquí
+      function actualizarColorRecibo() {
+        if (!entregaInp || !reciboInp) return;
+        const fechaEntrega = entregaInp.value;
+        const fechaRecibo = reciboInp.value;
+        if (!fechaEntrega || !fechaRecibo) {
+          reciboInp.style.backgroundColor = '';
+          return;
+        }
+        const dEntrega = new Date(fechaEntrega);
+        const dRecibo = new Date(fechaRecibo);
+        const msPorDia = 24 * 60 * 60 * 1000;
+        const diffDias = Math.floor((dRecibo - dEntrega) / msPorDia);
+        if (diffDias > 2) {
+          reciboInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          reciboInp.style.backgroundColor = '';
+        }
+      }
+      if (entregaInp && reciboInp) {
+        entregaInp.addEventListener('change', actualizarColorRecibo);
+        reciboInp.addEventListener('change', actualizarColorRecibo);
+        setTimeout(actualizarColorRecibo, 0);
+      }
+
+      // --- Colores automáticos para fecha_inicio_muestra respecto a fecha_ideal_inicio_muestra ---
+      const inicioMuestraInp = clone.querySelector('[data-field="fecha_inicio_muestra"]');
+      const idealInicioInp2 = clone.querySelector('[data-field="fecha_ideal_inicio_muestra"]');
+      function actualizarColorInicioMuestra() {
+        if (!inicioMuestraInp || !idealInicioInp2) return;
+        const fechaInicioMuestra = inicioMuestraInp.value;
+        const fechaIdealInicioMuestra = idealInicioInp2.value;
+        if (!fechaInicioMuestra || !fechaIdealInicioMuestra) {
+          inicioMuestraInp.style.backgroundColor = '';
+          return;
+        }
+        const dInicioMuestra = new Date(fechaInicioMuestra);
+        const dIdealInicioMuestra = new Date(fechaIdealInicioMuestra);
+        if (dInicioMuestra.getTime() < dIdealInicioMuestra.getTime()) {
+          inicioMuestraInp.style.backgroundColor = '#9b9b9b';
+        } else if (dInicioMuestra.getTime() > dIdealInicioMuestra.getTime()) {
+          inicioMuestraInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          inicioMuestraInp.style.backgroundColor = '';
+        }
+      }
+      if (inicioMuestraInp && idealInicioInp2) {
+        inicioMuestraInp.addEventListener('change', actualizarColorInicioMuestra);
+        idealInicioInp2.addEventListener('change', actualizarColorInicioMuestra);
+        setTimeout(actualizarColorInicioMuestra, 0);
+      }       
+
+      // --- Colores automáticos para fecha_seguimiento_real_uso respecto a fecha_ideal_seguimiento_uso ---
+      const seguimientoRealUsoInp = clone.querySelector('[data-field="fecha_seguimiento_real_uso"]');
+      const idealSeguimientoUsoInp = clone.querySelector('[data-field="fecha_ideal_seguimiento_uso"]');
+      function actualizarColorSeguimientoRealUso() {
+        if (!seguimientoRealUsoInp || !idealSeguimientoUsoInp) return;
+        const fechaReal = seguimientoRealUsoInp.value;
+        const fechaIdeal = idealSeguimientoUsoInp.value;
+        if (!fechaReal || !fechaIdeal) {
+          seguimientoRealUsoInp.style.backgroundColor = '';
+          return;
+        }
+        const dReal = new Date(fechaReal);
+        const dIdeal = new Date(fechaIdeal);
+        if (dReal.getTime() < dIdeal.getTime()) {
+          seguimientoRealUsoInp.style.backgroundColor = '#9b9b9b';
+        } else if (dReal.getTime() > dIdeal.getTime()) {
+          seguimientoRealUsoInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          seguimientoRealUsoInp.style.backgroundColor = '';
+        }
+      }
+      if (seguimientoRealUsoInp && idealSeguimientoUsoInp) {
+        seguimientoRealUsoInp.addEventListener('change', actualizarColorSeguimientoRealUso);
+        idealSeguimientoUsoInp.addEventListener('change', actualizarColorSeguimientoRealUso);
+        setTimeout(actualizarColorSeguimientoRealUso, 0);
+      }
+
+      // --- Colores automáticos para fecha_real_evaluacion_monadica respecto a fecha_ideal_inicio_muestra ---
+      const realMonadicaInp = clone.querySelector('[data-field="fecha_real_evaluacion_monadica"]');
+      const idealInicioMonadicaInp = clone.querySelector('[data-field="fecha_ideal_inicio_muestra"]');
+      function actualizarColorRealMonadica() {
+        if (!realMonadicaInp || !idealInicioMonadicaInp) return;
+        const fechaReal = realMonadicaInp.value;
+        const fechaIdeal = idealInicioMonadicaInp.value;
+        if (!fechaReal || !fechaIdeal) {
+          realMonadicaInp.style.backgroundColor = '';
+          return;
+        }
+        const dReal = new Date(fechaReal);
+        const dIdeal = new Date(fechaIdeal);
+        if (dReal.getTime() < dIdeal.getTime()) {
+          realMonadicaInp.style.backgroundColor = '#9b9b9b';
+        } else if (dReal.getTime() > dIdeal.getTime()) {
+          realMonadicaInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          realMonadicaInp.style.backgroundColor = '';
+        }
+      }
+      if (realMonadicaInp && idealInicioMonadicaInp) {
+        realMonadicaInp.addEventListener('change', actualizarColorRealMonadica);
+        idealInicioMonadicaInp.addEventListener('change', actualizarColorRealMonadica);
+        setTimeout(actualizarColorRealMonadica, 0);
+      }
+
+      // --- Colores automáticos para fecha_entrevista_final respecto a fecha_ideal_max_final y fecha_ideal_min_final ---
+      const entrevistaFinalInp = clone.querySelector('[data-field="fecha_entrevista_final"]');
+      const idealMaxFinalInp = clone.querySelector('[data-field="fecha_ideal_max_final"]');
+      const idealMinFinalInp = clone.querySelector('[data-field="fecha_ideal_min_final"]');
+      function actualizarColorEntrevistaFinal() {
+        if (!entrevistaFinalInp || !idealMaxFinalInp || !idealMinFinalInp) return;
+        const fechaFinal = entrevistaFinalInp.value;
+        const fechaIdealMax = idealMaxFinalInp.value;
+        const fechaIdealMin = idealMinFinalInp.value;
+        if (!fechaFinal || !fechaIdealMax || !fechaIdealMin) {
+          entrevistaFinalInp.style.backgroundColor = '';
+          return;
+        }
+        const dFinal = new Date(fechaFinal);
+        const dIdealMax = new Date(fechaIdealMax);
+        const dIdealMin = new Date(fechaIdealMin);
+        if (dFinal.getTime() > dIdealMax.getTime()) {
+          entrevistaFinalInp.style.backgroundColor = '#ff4d4d';
+        } else if (dFinal.getTime() < dIdealMin.getTime()) {
+          entrevistaFinalInp.style.backgroundColor = '#9b9b9b';
+        } else {
+          entrevistaFinalInp.style.backgroundColor = '';
+        }
+      }
+      if (entrevistaFinalInp && idealMaxFinalInp && idealMinFinalInp) {
+        entrevistaFinalInp.addEventListener('change', actualizarColorEntrevistaFinal);
+        idealMaxFinalInp.addEventListener('change', actualizarColorEntrevistaFinal);
+        idealMinFinalInp.addEventListener('change', actualizarColorEntrevistaFinal);
+        setTimeout(actualizarColorEntrevistaFinal, 0);
+      }
+
+      // --- Colores automáticos para fecha_real_restitucion respecto a fecha_ideal_maxima_restitucion ---
+      const realRestitucionInp = clone.querySelector('[data-field="fecha_real_restitucion"]');
+      const idealMaxRestitucionInp = clone.querySelector('[data-field="fecha_ideal_maxima_restitucion"]');
+      function actualizarColorRealRestitucion() {
+        if (!realRestitucionInp || !idealMaxRestitucionInp) return;
+        const fechaReal = realRestitucionInp.value;
+        const fechaIdealMax = idealMaxRestitucionInp.value;
+        if (!fechaReal || !fechaIdealMax) {
+          realRestitucionInp.style.backgroundColor = '';
+          return;
+        }
+        const dReal = new Date(fechaReal);
+        const dIdealMax = new Date(fechaIdealMax);
+        if (dReal.getTime() < dIdealMax.getTime()) {
+          realRestitucionInp.style.backgroundColor = '#9b9b9b';
+        } else if (dReal.getTime() > dIdealMax.getTime()) {
+          realRestitucionInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          realRestitucionInp.style.backgroundColor = '';
+        }
+      }
+      if (realRestitucionInp && idealMaxRestitucionInp) {
+        realRestitucionInp.addEventListener('change', actualizarColorRealRestitucion);
+        idealMaxRestitucionInp.addEventListener('change', actualizarColorRealRestitucion);
+        setTimeout(actualizarColorRealRestitucion, 0);
+      }
+
+      // --- Colores automáticos para fecha_envio_real_admin respecto a fecha_ideal_envio_admin ---
+      const envioRealAdminInp = clone.querySelector('[data-field="fecha_envio_real_admin"]');
+      const idealEnvioAdminInp = clone.querySelector('[data-field="fecha_ideal_envio_admin"]');
+      function actualizarColorEnvioRealAdmin() {
+        if (!envioRealAdminInp || !idealEnvioAdminInp) return;
+        const fechaReal = envioRealAdminInp.value;
+        const fechaIdeal = idealEnvioAdminInp.value;
+        if (!fechaReal || !fechaIdeal) {
+          envioRealAdminInp.style.backgroundColor = '';
+          return;
+        }
+        const dReal = new Date(fechaReal);
+        const dIdeal = new Date(fechaIdeal);
+        if (dReal.getTime() < dIdeal.getTime()) {
+          envioRealAdminInp.style.backgroundColor = '#9b9b9b';
+        } else if (dReal.getTime() > dIdeal.getTime()) {
+          envioRealAdminInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          envioRealAdminInp.style.backgroundColor = '';
+        }
+      }
+      if (envioRealAdminInp && idealEnvioAdminInp) {
+        envioRealAdminInp.addEventListener('change', actualizarColorEnvioRealAdmin);
+        idealEnvioAdminInp.addEventListener('change', actualizarColorEnvioRealAdmin);
+        setTimeout(actualizarColorEnvioRealAdmin, 0);
+      }
+
+      // --- Colores automáticos para fecha_real_entrega_bono respecto a fecha_ideal_maxima_entrega_bono ---
+      const realEntregaBonoInp = clone.querySelector('[data-field="fecha_real_entrega_bono"]');
+      const idealMaxEntregaBonoInp = clone.querySelector('[data-field="fecha_ideal_maxima_entrega_bono"]');
+      function actualizarColorRealEntregaBono() {
+        if (!realEntregaBonoInp || !idealMaxEntregaBonoInp) return;
+        const fechaReal = realEntregaBonoInp.value;
+        const fechaIdealMax = idealMaxEntregaBonoInp.value;
+        if (!fechaReal || !fechaIdealMax) {
+          realEntregaBonoInp.style.backgroundColor = '';
+          return;
+        }
+        const dReal = new Date(fechaReal);
+        const dIdealMax = new Date(fechaIdealMax);
+        if (dReal.getTime() < dIdealMax.getTime()) {
+          realEntregaBonoInp.style.backgroundColor = '#9b9b9b';
+        } else if (dReal.getTime() > dIdealMax.getTime()) {
+          realEntregaBonoInp.style.backgroundColor = '#ff4d4d';
+        } else {
+          realEntregaBonoInp.style.backgroundColor = '';
+        }
+      }
+      if (realEntregaBonoInp && idealMaxEntregaBonoInp) {
+        realEntregaBonoInp.addEventListener('change', actualizarColorRealEntregaBono);
+        idealMaxEntregaBonoInp.addEventListener('change', actualizarColorRealEntregaBono);
+        setTimeout(actualizarColorRealEntregaBono, 0);
+      }
 
   clone.addEventListener("submit", handleModalSave);
 
