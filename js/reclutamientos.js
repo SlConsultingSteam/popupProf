@@ -222,6 +222,13 @@ async function cargarReclutamientos() {
 
   tbody.innerHTML = `<tr><td colspan="8">Cargando...</td></tr>`;
 
+  // Limpiar caches para evitar datos cruzados/obsoletos
+  cacheReclutamientos.clear();
+  cacheBdProyectos.clear();
+  cacheParticipantes.clear();
+  cacheHijos.clear();
+  cacheProyectos.clear();
+
   const reclutamientos = await getReclutamientos(idProfesional, token);
   if (!Array.isArray(reclutamientos) || reclutamientos.length === 0) {
   tbody.innerHTML = `<tr><td colspan="8">Sin registros</td></tr>`;
@@ -254,7 +261,7 @@ async function cargarReclutamientos() {
 
   reclIndex.clear();
 
-  const rowsHTML = reclutamientos.map(r => {
+  const rowsHTML = reclutamientos.map((r, idx) => {
     const bd = cacheBdProyectos.get(r.id_bdproyecto);
     const pid = bd && (bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part);
     const part = pid ? cacheParticipantes.get(pid) : null;
@@ -270,7 +277,8 @@ async function cargarReclutamientos() {
       if (projId) proyectoObj = cacheProyectos.get(Number(projId));
     }
 
-    reclIndex.set(r.id, { reclutamiento: r, bdProyecto: bd, participante: part, hijo, proyecto: proyectoObj });
+  const rowKey = `${String(r.id)}|${String(r.id_bdproyecto ?? '')}|${String(pid ?? '')}|${idx}`;
+  reclIndex.set(rowKey, { reclutamiento: r, bdProyecto: bd, participante: part, hijo, proyecto: proyectoObj });
 
     const nombre = norm(part, ["nombre_participante","nombre","nombre_completo","nombre_apellido","participante"]);
     const telefono = norm(part, ["telefono","telefono1","telefono_1","celular","contacto"]);
@@ -306,7 +314,7 @@ async function cargarReclutamientos() {
     }
   const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
 
-    return `<tr class="recl-row" data-id-recl="${escapeHTML(r.id)}">
+  return `<tr class="recl-row" data-recl-key="${escapeHTML(rowKey)}">
       <td>${escapeHTML(nombre)}</td>
       <td>${escapeHTML(telefono)}</td>
   <td>${escapeHTML(proyectoNombre)}</td>
@@ -322,8 +330,8 @@ async function cargarReclutamientos() {
 
   tbody.querySelectorAll(".recl-row").forEach(tr => {
     tr.addEventListener("click", () => {
-      const idRecl = tr.getAttribute("data-id-recl");
-      openReclutamientoModal(Number(idRecl));
+      const key = tr.getAttribute("data-recl-key");
+      openReclutamientoModal(key);
     });
   });
 
@@ -351,6 +359,7 @@ let modalState = {
 // Si ves que ahora se suman horas incorrectas ajusta este valor.
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
+const DEBUG_UI = false; // activar panel debug en modal
 
 function applyTimeOffset(dateStr){
   if(!dateStr) return null;
@@ -401,11 +410,29 @@ function normalizeInterval(val){
   return s; // fallback
 }
 
-function openReclutamientoModal(reclId) {
-  const triple = reclIndex.get(reclId);
+async function openReclutamientoModal(reclKey) {
+  let triple = reclIndex.get(reclKey);
   if (!triple) {
-    console.warn("No data para reclutamiento", reclId);
-    return;
+    // Fallback: reconstruir usando IDs del key
+    try {
+      const [ridStr, bdidStr, pidStr] = String(reclKey).split('|');
+      const token = sessionStorage.getItem('token');
+      const rid = ridStr ? Number(ridStr) : null;
+      const bdid = bdidStr ? Number(bdidStr) : null;
+      const pid = pidStr ? Number(pidStr) : null;
+      const reclutamiento = rid ? (await getReclutamientoById(rid, token)) : null;
+      const bdProyecto = bdid ? (await getBdProyecto(bdid, token)) : null;
+      const participante = pid ? (await getParticipante(pid, token)) : null;
+      let hijo = null;
+      if (bdProyecto) {
+        const hid = bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo;
+        hijo = hid ? (await getHijo(hid, token)) : null;
+      }
+      triple = { reclutamiento, bdProyecto, participante, hijo, proyecto: null };
+    } catch (err) {
+      console.warn('No data para reclutamiento (fallback)', reclKey, err);
+      return;
+    }
   }
   const { reclutamiento, bdProyecto, participante, hijo } = triple;
   modalState.reclutamientoId = reclutamiento.id;
@@ -435,6 +462,15 @@ function openReclutamientoModal(reclId) {
       hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
       delete hijoCopy.fecha_nacimiento;
     }
+    // Evitar que el documento del hijo sobrescriba el del participante
+    if (hijoCopy.documento && combined.documento && hijoCopy.documento !== combined.documento) {
+      hijoCopy.documento_bebe = hijoCopy.documento;
+      delete hijoCopy.documento;
+    }
+    if (hijoCopy.cedula && combined.documento && hijoCopy.cedula !== combined.documento) {
+      hijoCopy.cedula_bebe = hijoCopy.cedula;
+      delete hijoCopy.cedula;
+    }
     Object.assign(combined, hijoCopy); // ahora no sobreescribe la del participante
   }
 
@@ -449,6 +485,48 @@ function openReclutamientoModal(reclId) {
   }
 
   console.log("[COMBINED]", combined);
+
+  // DEBUG panel con IDs y URLs de la API
+  if (DEBUG_UI) {
+    const modalBody = document.getElementById("modalBodyContent");
+    const pathBD = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
+    const rid = reclutamiento?.id ?? '';
+    const bdid = (bdProyecto && (bdProyecto.id_bdproyecto || bdProyecto.id)) || '';
+    const pid = (participante && (participante.id || participante.id_participante || participante.idParticipante)) || '';
+    const hid = (bdProyecto && (bdProyecto.id_hijo || bdProyecto.idHijo || bdProyecto.id_hijo_fk || bdProyecto.id_bdhijo)) || '';
+    let projId = bdProyecto ? (bdProyecto.id_proyecto || bdProyecto.idProyecto) : '';
+    if (!projId && bdProyecto && bdProyecto.proyecto && /^\d+$/.test(String(bdProyecto.proyecto))) projId = Number(bdProyecto.proyecto);
+    const debugBox = document.createElement('div');
+    debugBox.className = 'alert alert-secondary py-2 px-3 mb-2';
+    debugBox.style.fontSize = '12px';
+    debugBox.innerHTML = `
+      <div><strong>DEBUG</strong></div>
+      <div>reclutamientoId: ${escapeHTML(rid)}</div>
+      <div>bdProyectoId: ${escapeHTML(bdid)}</div>
+      <div>participanteId: ${escapeHTML(pid)}</div>
+      <div>hijoId: ${escapeHTML(hid)}</div>
+      <div>proyectoId: ${escapeHTML(projId ?? '')}</div>
+      <hr class="my-1" />
+      <div>GET URLs:</div>
+      <div>${escapeHTML(`${API_BASE}/reclutamientos/${rid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/${pathBD}/${bdid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/participantes/${pid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/hijos/${hid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/proyectos/${projId ?? ''}`)}</div>
+      <hr class="my-1" />
+      <div>PUT URLs:</div>
+      <div>${escapeHTML(`${API_BASE}/reclutamientos/${rid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/participantes/${pid}`)}</div>
+      <div>${escapeHTML(`${API_BASE}/${pathBD}/${bdid}`)}</div>
+    `;
+    // Insertar arriba del formulario
+    const formNode = document.getElementById('popupDynamicForm');
+    if (formNode && formNode.parentNode === modalBody) {
+      modalBody.insertBefore(debugBox, formNode);
+    } else {
+      modalBody.prepend(debugBox);
+    }
+  }
 
   // Calcular edad solo del PARTICIPANTE: usar la fecha_nacimiento que quedó tras merge (no la del bebé renombrada)
   const birthKeys = ["fecha_nacimiento"]; // ya no incluye la del bebé
@@ -466,6 +544,22 @@ function openReclutamientoModal(reclId) {
       if (age >= 0 && age < 130) combined.edad = String(age); // asignar edad estimada
     }
   }
+
+  // Calcular meses del BEBÉ a partir de bebe_nacimiento/fecha_nacimiento_bebe/nacimiento
+  (function computeBebeMeses(){
+    const bebeDob = combined.bebe_nacimiento || combined.fecha_nacimiento_bebe || combined.nacimiento;
+    if (!bebeDob) return;
+    const d = new Date(bebeDob);
+    if (isNaN(d.getTime())) return;
+    const today = new Date();
+    let months = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
+    if (today.getDate() < d.getDate()) months -= 1;
+    if (months < 0) months = 0;
+    // Solo establecer si no viene ya uno válido
+    if (!combined.bebe_edad_meses || combined.bebe_edad_meses === '' || Number.isNaN(Number(combined.bebe_edad_meses))) {
+      combined.bebe_edad_meses = String(months);
+    }
+  })();
 
   // Derivar hora y hora_final desde fechas si faltan
   function extractTime(str){
@@ -527,7 +621,7 @@ function openReclutamientoModal(reclId) {
     }
   }
 
-  const baseRealizacion2 = combined.fecha_despacho[1];
+  const baseRealizacion2 = Array.isArray(combined.fecha_despacho) ? combined.fecha_despacho[1] : null;
   if (baseRealizacion2) {
     if(!combined.fecha_ideal_inicio_muestra || combined.fecha_ideal_inicio_muestra === '') {
       const calcMin = addDays(baseRealizacion2, 2);
@@ -539,7 +633,7 @@ function openReclutamientoModal(reclId) {
     }
   }
 
-  const baseRealizacion3 = combined.fecha_inicio_muestras[0];
+  const baseRealizacion3 = Array.isArray(combined.fecha_inicio_muestras) ? combined.fecha_inicio_muestras[0] : null;
   if (baseRealizacion3) {
     if(!combined.fecha_ideal_evaluacion_monadica || combined.fecha_ideal_evaluacion_monadica === '') {
       const calcMin = addDays(baseRealizacion3, 8);
@@ -689,7 +783,9 @@ async function handleModalSave(e) {
   const changed = {};
   form.querySelectorAll("[data-field]").forEach(inp => {
     const key = inp.getAttribute("data-field");
-    if (modalState.originalValues[key] !== inp.value) {
+  // Saltar campos derivados que no deben guardarse directamente
+  if (key === 'bebe_edad_meses') return;
+  if (modalState.originalValues[key] !== inp.value) {
       const backendKey = saveNameOverride[key] || key;
       changed[backendKey] = inp.value;
     }
@@ -712,7 +808,7 @@ async function handleModalSave(e) {
     "p15","p16","p17","p18","p19","p20","p21","p22","p23","p24","p25","p26","p27",
     "p28","p29","p30","p31","p32","p33","p34","p35","p36","p37","p38","p39","p40",
     "p41","p42","p43","p44","p45","p46","p47","p48","p49","p50","p51","p52","p53",
-    "p54","p55","p56","p57","p58","p59","p60","p61", "documentos", "observaciones", 
+  "p54","p55","p56","p57","p58","p59","p60","p61", "documentos", "observaciones", 
     "observaciones_supervisora", "observaciones_docu", "contacto", "conclusion_1",
     "conclusion_2", "conclusion_3"
   ]);
@@ -722,18 +818,18 @@ async function handleModalSave(e) {
     "fecha_real","hora",/* "link_entrevista" <-- eliminado, se mapea a link */ "efectividad","tiempo_entrevista_inicial",
     "calificacion_tiro_blanco","fecha_entrega_producto","fecha_recibo",
     "tiempo_estatus_recibo","confirmacion_verbal","fecha_ideal_inicio_muestra",
-    "fecha_inicio_muestra","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso",
+  "fecha_inicio_muestra","fecha_inicio_muestras","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso","fecha_seg_muestras",
     "fecha_ideal_evaluacion_monadica","fecha_real_evaluacion_monadica",
-    "tiempo_evaluacion_monadica","irritacion_bebe_primer_producto",
+  "tiempo_evaluacion_monadica","tiempo_monadica_muestras","irritacion_bebe_primer_producto",
     "fecha_ideal_min_final","fecha_ideal_max_final","fecha_entrevista_final",
-    "hora_final","status_efectividad_final","modalidad_entrevista_final",
-    "tiempo_entrevista_final","calificacion_tiro_blanco_final",
+  "hora_final","status_efectividad_final","modalidad_entrevista_final","modalidad_entrevista",
+  "tiempo_entrevista_final","tiempo_final","calificacion_tiro_blanco_final",
     "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
     "fecha_ideal_envio_admin","fecha_envio_real_admin",
   "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
   "observaciones","observaciones_bono",
     // Añadidos backend para evitar warnings tras alias
-    "fecha_e_inicial","fecha_realizacion_p"
+  "fecha_e_inicial","fecha_realizacion_p","fecha_monadica","tiempo_e_inicial","tiempo_final"
   ]);
 
   const payloadParticipante = {};
@@ -750,11 +846,16 @@ async function handleModalSave(e) {
     if (k === 'link_entrevista') k = 'link';
   if (k === 'estado_encuadre') k = 'estado';
     // NUEVOS ALIAS para que las fechas se guarden correctamente
-    if (k === 'fecha_real') k = 'fecha_e_inicial';
+  if (k === 'fecha_real') k = 'fecha_e_inicial';
     if (k === 'fecha_realizacion_profesional') k = 'fecha_realizacion_p';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
     if (k === 'observaciones_bono') k = 'observaciones';
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
+  if (k === 'fecha_inicio_muestra') k = 'fecha_inicio_muestras';
+  if (k === 'fecha_seguimiento_real_uso') k = 'fecha_seg_muestras';
+  if (k === 'tiempo_entrevista_inicial') k = 'tiempo_e_inicial';
+  if (k === 'tiempo_entrevista_final') k = 'tiempo_final';
+  if (k === 'tiempo_evaluacion_monadica') k = 'tiempo_monadica_muestras';
 
     // Normalizar intervalos
   if (k.startsWith('tiempo_') && k !== 'tiempo_estatus_recibo') { // tiempo_estatus_recibo se procesa después como tiempo_recibo
@@ -771,7 +872,7 @@ async function handleModalSave(e) {
       payloadParticipante[k] = val;
     } else if (bdProyectoKeys.has(k)) {
       payloadBdProyecto[k] = val;
-    } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final'].includes(k)) {
+  } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final','fecha_inicio_muestras','fecha_seg_muestras','tiempo_e_inicial','tiempo_final','tiempo_monadica_muestras'].includes(k)) {
       payloadReclutamientoPartial[k] = val;
     } else {
       console.warn("Campo sin destino:", origKey, "->", k);
@@ -1030,6 +1131,20 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
       fullPayload.fecha_despacho = origArr.filter((v,i) => v || i < 2);
       delete fullPayload.fecha_entrega_producto;
       delete fullPayload.fecha_recibo;
+    }
+
+    // Mapear fecha_inicio_muestra (UI) a fecha_inicio_muestras[0]
+    if ('fecha_inicio_muestras' in payloadReclutamientoPartial) {
+      const origArr = Array.isArray(original.fecha_inicio_muestras) ? [...original.fecha_inicio_muestras] : [];
+      origArr[0] = payloadReclutamientoPartial['fecha_inicio_muestras'] || null;
+      fullPayload.fecha_inicio_muestras = origArr;
+    }
+
+    // Mapear fecha_seguimiento_real_uso (UI) a fecha_seg_muestras[0]
+    if ('fecha_seg_muestras' in payloadReclutamientoPartial) {
+      const origSeg = Array.isArray(original.fecha_seg_muestras) ? [...original.fecha_seg_muestras] : [];
+      origSeg[0] = payloadReclutamientoPartial['fecha_seg_muestras'] || null;
+      fullPayload.fecha_seg_muestras = origSeg;
     }
 
     // --- Normalizar fechas: Backend espera timestamps con hora (ej: 2006-01-02T15:04:05Z) ---
