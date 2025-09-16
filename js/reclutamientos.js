@@ -585,18 +585,22 @@ const saveNameOverride = {
   telefono2: "telefono_2",
   telefono3: "telefono_3",
   origen: "origen_dato",
-  // BDHijos mapeos a nombres backend
+  // BDHijos
   bebe_nombre: "nombre_hijo",
   bebe_nacimiento: "fecha_nacimiento",
   bebe_sexo: "sexo",
-  bebe_edad_primer: "p4",  // bebe_edad_primer -> p4
-  crema_marca: "p23",      // crema_marca -> p23
-  crema_frecuencia: "p25", // crema_frecuencia -> p25
-  otra_crema_si_no: "p8",  // otra_crema_si_no -> p8
-  otra_crema_marca: "p9",  // otra_crema_marca -> p9
-  otra_crema_marca_referencia: "p10", // otra_crema_marca_referencia -> p10
-  otra_crema_razones: "p11", // otra_crema_razones -> p11
-  otra_crema_frecuencia: "p12", 
+  bebe_edad_primer: "p4",
+  crema_marca: "p23",
+  crema_frecuencia: "p25",
+  otra_crema_si_no: "p8",
+  otra_crema_marca: "p9",
+  otra_crema_marca_referencia: "p10",
+  otra_crema_razones: "p11",
+  otra_crema_frecuencia: "p12",
+  // FIX: enviar observaciones_bono como 'observaciones' (reclutamiento)
+  observaciones_bono: "observaciones",
+  // FIX: typo común en el UI
+  estado_esncudre: "estado"
 };
 
 function resolveValue(key, combined) {
@@ -1269,7 +1273,7 @@ async function handleModalSave(e) {
   const reclutamientoKeys = new Set([
     "fecha_asignacion_gestora","fecha_asignacion_supervisora","fecha_realizacion_profesional",
     "estado_encuadre","tiempo_estatus_encuadre","fecha_ideal_min","fecha_ideal_max",
-    "fecha_real","hora",/* "link_entrevista" <-- eliminado, se mapea a link */ "efectividad","tiempo_entrevista_inicial",
+    "fecha_real","hora","efectividad","tiempo_entrevista_inicial",
     "calificacion_tiro_blanco","fecha_entrega_producto","fecha_recibo",
     "tiempo_estatus_recibo","confirmacion_verbal","fecha_ideal_inicio_muestra",
   "fecha_inicio_muestra","fecha_inicio_muestras","fecha_ideal_seguimiento_uso","fecha_seguimiento_real_uso","fecha_seg_muestras",
@@ -1281,10 +1285,13 @@ async function handleModalSave(e) {
     "fecha_ideal_maxima_restitucion","restitucion_entregables","fecha_real_restitucion",
     "fecha_ideal_envio_admin","fecha_envio_real_admin",
   "fecha_ideal_maxima_entrega_bono","fecha_real_entrega_bono",
-  "observaciones","observaciones_bono",
-    // Añadidos backend para evitar warnings tras alias
-  "fecha_e_inicial","fecha_realizacion_p","fecha_monadica","tiempo_e_inicial","tiempo_final"
-  ]);
+  // aquí guardamos el texto
+  "observaciones",
+  // Añadidos backend para evitar warnings tras alias
+  "fecha_e_inicial","fecha_realizacion_p","fecha_monadica","tiempo_e_inicial","tiempo_final",
+  // FIX: aceptar 'estado' directamente
+  "estado"
+]);
 
   const payloadParticipante = {};
   const payloadBdHijo = {};
