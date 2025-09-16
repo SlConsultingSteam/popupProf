@@ -1304,7 +1304,11 @@ async function handleModalSave(e) {
   if (k === 'fecha_real') k = 'fecha_e_inicial';
     if (k === 'fecha_realizacion_profesional') k = 'fecha_realizacion_p';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
-    if (k === 'observaciones_bono') k = 'observaciones';
+    // Observaciones del bono pertenecen al RECLUTAMIENTO, no a bdProyecto
+    if (k === 'observaciones_bono') {
+      // keep key as 'observaciones_bono' so it is routed to payloadReclutamientoPartial below
+      k = 'observaciones_bono';
+    }
     if (k === 'fecha_real_evaluacion_monadica') k = 'fecha_monadica'; // <--- NUEVO ALIAS
   if (k === 'fecha_inicio_muestra') k = 'fecha_inicio_muestras';
   if (k === 'fecha_seguimiento_real_uso') k = 'fecha_seg_muestras';
@@ -1327,7 +1331,7 @@ async function handleModalSave(e) {
       payloadParticipante[k] = val;
     } else if (hijoKeys.has(k)) {
       payloadBdHijo[k] = val;
-    } else if (bdProyectoKeys.has(k)) {
+    } else if (bdProyectoKeys.has(k) && origKey !== 'observaciones_bono' && k !== 'observaciones_bono') {
       payloadBdProyecto[k] = val;
   } else if (reclutamientoKeys.has(k) || ['link','fecha_monadica','fecha_final','fecha_inicio_muestras','fecha_seg_muestras','tiempo_e_inicial','tiempo_final','tiempo_monadica_muestras'].includes(k)) {
       payloadReclutamientoPartial[k] = val;
@@ -1612,7 +1616,9 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
       } else if (k === 'modalidad_entrevista_final') {
         fullPayload.modalidad_entrevista = v;
       } else if (k === 'observaciones_bono') {
-        fullPayload.observaciones = v;
+        // observaciones_bono debe guardarse en el reclutamiento, no en bdProyecto.
+        // Ignorar aquí y dejar que la sección de payloadReclutamientoPartial lo maneje.
+        continue;
       } else if (k === 'link') {                      // <--- asegura guardar en 'link'
         fullPayload.link = v;
       } else {
