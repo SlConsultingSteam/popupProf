@@ -867,44 +867,19 @@ async function openReclutamientoModal(reclKey) {
   if (participante) Object.assign(combined, participante); // prioridad a datos del participante
   if (hijo) {
     const hijoCopy = { ...hijo };
-    // Claves posibles del PARTICIPANTE en el objeto combinado
-    const participantBirthKeys = ["fecha_nacimiento","fechaNacimiento","fecha_nac","f_nacimiento","fnacimiento"];
-    const participantDocKeys   = ["documento","cedula","cedula_participante","num_documento"];
-
-    // Fecha de nacimiento: si el hijo la trae y el combinado ya tiene alguna del PARTICIPANTE, renombrar a *_bebe
+    // Nunca mezclar campos del hijo en los del participante: siempre renombrar a *_bebe
     if (hijoCopy.fecha_nacimiento) {
-      const participantBirthKey = participantBirthKeys.find(k => combined[k] != null && combined[k] !== "");
-      if (participantBirthKey) {
-        const participantBirthVal = combined[participantBirthKey];
-        if (participantBirthVal !== hijoCopy.fecha_nacimiento) {
-          hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
-          delete hijoCopy.fecha_nacimiento;
-        }
-      }
+      hijoCopy.fecha_nacimiento_bebe = hijoCopy.fecha_nacimiento;
+      delete hijoCopy.fecha_nacimiento;
     }
-
-    // Documento: si el hijo lo trae y el combinado ya tiene alguno del PARTICIPANTE, renombrar a *_bebe
     if (hijoCopy.documento) {
-      const participantDocKey = participantDocKeys.find(k => combined[k] != null && combined[k] !== "");
-      if (participantDocKey) {
-        const participantDocVal = combined[participantDocKey];
-        if (participantDocVal !== hijoCopy.documento) {
-          hijoCopy.documento_bebe = hijoCopy.documento;
-          delete hijoCopy.documento;
-        }
-      }
+      hijoCopy.documento_bebe = hijoCopy.documento;
+      delete hijoCopy.documento;
     }
     if (hijoCopy.cedula) {
-      const participantDocKey = participantDocKeys.find(k => combined[k] != null && combined[k] !== "");
-      if (participantDocKey) {
-        const participantDocVal = combined[participantDocKey];
-        if (participantDocVal !== hijoCopy.cedula) {
-          hijoCopy.cedula_bebe = hijoCopy.cedula;
-          delete hijoCopy.cedula;
-        }
-      }
+      hijoCopy.cedula_bebe = hijoCopy.cedula;
+      delete hijoCopy.cedula;
     }
-
     Object.assign(combined, hijoCopy); // ahora no sobreescribe la info del participante
   }
 
