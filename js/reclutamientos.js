@@ -660,7 +660,22 @@ async function cargarReclutamientos() {
 
   reclIndex.clear();
 
-  const rowsHTML = reclutamientos.map((r, idx) => {
+  // Filtrar por estado_participante === 'EFECTIVO' en bdProyecto
+  const reclutamientosFiltrados = reclutamientos.filter(r => {
+    const bd = cacheBdProyectos.get(r.id_bdproyecto);
+    if (!bd) return false;
+    const estado = String(
+      bd.estado_participante ?? bd.estadoParticipante ?? bd.estado ?? ''
+    ).trim().toUpperCase();
+    return estado === 'EFECTIVO';
+  });
+
+  if (!reclutamientosFiltrados.length) {
+    tbody.innerHTML = `<tr><td colspan="8">Sin registros</td></tr>`;
+    return;
+  }
+
+  const rowsHTML = reclutamientosFiltrados.map((r, idx) => {
     const bd = cacheBdProyectos.get(r.id_bdproyecto);
     const pid = bd && (bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part);
     const part = pid ? cacheParticipantes.get(pid) : null;
