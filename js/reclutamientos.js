@@ -417,16 +417,40 @@ function escapeHTML(str) {
     .replace(/>/g,"&gt;");
 }
 
+// Helper con reintentos, backoff y timeout
+async function requestWithRetry(url, options = {}, label = 'request', retries = 2, backoffMs = 300, timeoutMs = 12000) {
+  let attempt = 0;
+  let lastErr = null;
+  while (attempt <= retries) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return resp;
+    } catch (e) {
+      clearTimeout(id);
+      lastErr = e;
+      if (attempt === retries) break;
+      await new Promise(r => setTimeout(r, backoffMs * Math.pow(2, attempt)));
+      attempt++;
+    }
+  }
+  console.error(`[${label}] Network error after retries`, lastErr);
+  throw lastErr;
+}
+
 async function fetchJSON(url, token, label) {
   try {
-    const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const resp = await requestWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, label);
     if (resp.status === 401) {
       sessionStorage.clear();
       window.location.href = "login.html";
       return null;
     }
     if (!resp.ok) {
-      console.error(`[${label}] ${resp.status} -> ${await resp.text()}`);
+      const txt = await resp.text().catch(() => '');
+      console.error(`[${label}] ${resp.status} -> ${txt}`);
       return null;
     }
     return await resp.json();
@@ -441,13 +465,13 @@ async function getReclutamientos(idProfesional, token) {
   if (cacheReclutamientos.has(key)) return cacheReclutamientos.get(key);
 
   // Nueva fuente: /reclutamiento-profesionales/{id_usuario}
-  console.log(`[DEBUG] getReclutamientos: fetching /reclutamiento-profesionales/${idProfesional}`);
+  dbg(`[DEBUG] getReclutamientos: fetching /reclutamiento-profesionales/${idProfesional}`);
   const enlaces = await fetchJSON(
     `${API_BASE}/reclutamiento-profesionales/${idProfesional}`,
     token,
     "reclutamiento-profesionales"
   );
-  console.log(`[DEBUG] /reclutamiento-profesionales response:`, enlaces);
+  dbg(`[DEBUG] /reclutamiento-profesionales response:`, enlaces);
 
   // Extraer IDs de reclutamiento y normalizar
   const ids = Array.isArray(enlaces)
@@ -691,9 +715,10 @@ async function cargarReclutamientos() {
     }
     if (projId) proyectoIds.add(Number(projId));
   }
-  await Promise.all([...participanteIds].map(pid => getParticipante(pid, token)));
-  await Promise.all([...hijoIds].map(hid => getHijo(hid, token)));
-  await Promise.all([...proyectoIds].map(pid => getProyecto(pid, token)));
+  const pParticipantes = Promise.all([...participanteIds].map(pid => getParticipante(pid, token)));
+  const pHijos = Promise.all([...hijoIds].map(hid => getHijo(hid, token)));
+  const pProyectos = Promise.all([...proyectoIds].map(pid => getProyecto(pid, token)));
+  await Promise.all([pParticipantes, pHijos, pProyectos]);
 
   reclIndex.clear();
 
@@ -712,7 +737,8 @@ async function cargarReclutamientos() {
     return;
   }
 
-  const rowsHTML = reclutamientosFiltrados.map((r, idx) => {
+  // Preparar datos de filas pero renderizar por chunks para UI más fluida
+  const rowsData = reclutamientosFiltrados.map((r, idx) => {
     const bd = cacheBdProyectos.get(r.id_bdproyecto);
     const pid = bd && (bd.id_participante || bd.idParticipante || bd.participante_id || bd.id_participante_fk || bd.id_part);
     const part = pid ? cacheParticipantes.get(pid) : null;
@@ -768,26 +794,60 @@ async function cargarReclutamientos() {
     }
   const finalE = okBool(r.efectividad_final != null ? r.efectividad_final : r.status_efectividad_final) ? 'OK' : '-';
 
-  return `<tr class="recl-row" data-recl-key="${escapeHTML(rowKey)}">
+  const html = `<tr class="recl-row" data-recl-key="${escapeHTML(rowKey)}">
       <td>${escapeHTML(nombre)}</td>
       <td>${escapeHTML(telefono)}</td>
-  <td>${escapeHTML(proyectoNombre)}</td>
+      <td>${escapeHTML(proyectoNombre)}</td>
       <td>${escapeHTML(ciudad)}</td>
-  <td>${escapeHTML(encuadre)}</td>
-  <td>${escapeHTML(inicial)}</td>
-  <td>${escapeHTML(monadica)}</td>
-  <td>${escapeHTML(finalE)}</td>
+      <td>${escapeHTML(encuadre)}</td>
+      <td>${escapeHTML(inicial)}</td>
+      <td>${escapeHTML(monadica)}</td>
+      <td>${escapeHTML(finalE)}</td>
     </tr>`;
-  }).join("");
-
-  tbody.innerHTML = rowsHTML;
-
-  tbody.querySelectorAll(".recl-row").forEach(tr => {
-    tr.addEventListener("click", () => {
-      const key = tr.getAttribute("data-recl-key");
-      openReclutamientoModal(key);
-    });
+  return { key: rowKey, html };
   });
+
+  // Render incremental
+  const total = rowsData.length;
+  tbody.innerHTML = `<tr id="loading-row"><td colspan="8">Cargando 0/${total}...</td></tr>`;
+  const loadingRow = () => document.getElementById('loading-row');
+  const chunkSize = 50;
+  let i = 0;
+  function renderChunk() {
+    const frag = document.createDocumentFragment();
+    const container = document.createElement('tbody');
+    const end = Math.min(i + chunkSize, total);
+    let batchHtml = '';
+    for (let j = i; j < end; j++) batchHtml += rowsData[j].html;
+    container.innerHTML = batchHtml;
+    while (container.firstChild) frag.appendChild(container.firstChild);
+    const lr = loadingRow();
+    if (lr && lr.parentNode === tbody) {
+      tbody.insertBefore(frag, lr.nextSibling);
+      lr.firstElementChild.textContent = `Cargando ${end}/${total}...`;
+    } else {
+      tbody.appendChild(frag);
+    }
+    i = end;
+    if (i < total) {
+      setTimeout(renderChunk, 0);
+    } else {
+      const lr2 = loadingRow();
+      if (lr2) lr2.remove();
+    }
+  }
+  renderChunk();
+
+  // Event delegation para click en filas, compatible con render incremental
+  if (!tbody.dataset.clickBound) {
+    tbody.dataset.clickBound = '1';
+    tbody.addEventListener('click', (ev) => {
+      const tr = ev.target.closest('.recl-row');
+      if (!tr) return;
+      const key = tr.getAttribute('data-recl-key');
+      if (key) openReclutamientoModal(key);
+    });
+  }
 
   const filtro = document.getElementById("filter-nombre");
   if (filtro && !filtro.dataset.bound) {
@@ -950,7 +1010,7 @@ async function openReclutamientoModal(reclKey) {
     }
   }
 
-  console.log("[COMBINED]", combined);
+  dbg("[COMBINED]", combined);
 
   // DEBUG panel con IDs y URLs de la API
   if (DEBUG_UI) {
@@ -1385,10 +1445,26 @@ async function handleModalSave(e) {
   });
 
   const requests = [];
+  // Prefetch originals concurrently to minimize latency
+  const pOriginalParticipante = modalState.participanteId && Object.keys(payloadParticipante).length
+    ? getParticipante(modalState.participanteId, token)
+    : Promise.resolve(null);
+  const pOriginalHijo = modalState.hijoId && Object.keys(payloadBdHijo).length
+    ? getHijo(modalState.hijoId, token)
+    : Promise.resolve(null);
+  const pOriginalBdProyecto = modalState.bdProyectoId && Object.keys(payloadBdProyecto).length
+    ? getBdProyecto(modalState.bdProyectoId, token)
+    : Promise.resolve(null);
+  const pOriginalReclutamiento = modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length
+    ? getReclutamientoById(modalState.reclutamientoId, token)
+    : Promise.resolve(null);
+  const [originalParticipanteData, originalHijoData, originalBdProyectoData, originalReclutamientoData] = await Promise.all([
+    pOriginalParticipante, pOriginalHijo, pOriginalBdProyecto, pOriginalReclutamiento
+  ]);
 
   // Para participante: construir payload completo
 if (modalState.participanteId && Object.keys(payloadParticipante).length) {
-  const originalParticipante = await getParticipante(modalState.participanteId, token) || {};
+  const originalParticipante = originalParticipanteData || {};
   
   // Lista de campos posibles del participante (basado en tu API)
   const fullPayloadParticipante = {
@@ -1414,17 +1490,17 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
   // Sobrescribir con cambios
   Object.assign(fullPayloadParticipante, payloadParticipante);
 
-  console.log('[PUT participante payload]', fullPayloadParticipante);
-  requests.push(fetch(`${API_BASE}/participantes/${modalState.participanteId}`, {
+  dbg('[PUT participante payload]', fullPayloadParticipante);
+  requests.push(requestWithRetry(`${API_BASE}/participantes/${modalState.participanteId}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadParticipante)
-  }).then(r => ({ target: "participante", r })));
+  }, 'PUT participante').then(r => ({ target: "participante", r })));
 }
 
 // Para bdhijo: construir payload completo
 if (modalState.hijoId && Object.keys(payloadBdHijo).length) {
-  const originalHijo = await getHijo(modalState.hijoId, token) || {};
+  const originalHijo = originalHijoData || {};
   const fullPayloadHijo = {
     id: originalHijo.id ?? modalState.hijoId,
     nombre_hijo: originalHijo.nombre_hijo ?? originalHijo.nombre ?? null,
@@ -1439,17 +1515,17 @@ if (modalState.hijoId && Object.keys(payloadBdHijo).length) {
 
   Object.assign(fullPayloadHijo, payloadBdHijo);
 
-  console.log('[PUT bdhijo payload]', fullPayloadHijo);
-  requests.push(fetch(`${API_BASE}/hijos/${modalState.hijoId}`, {
+  dbg('[PUT bdhijo payload]', fullPayloadHijo);
+  requests.push(requestWithRetry(`${API_BASE}/hijos/${modalState.hijoId}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadHijo)
-  }).then(r => ({ target: "bdhijo", r })));
+  }, 'PUT bdhijo').then(r => ({ target: "bdhijo", r })));
 }
 
 // Para bdproyecto: incluir TODOS los campos para mantener estado completo
 if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
-  const originalBdProyecto = await getBdProyecto(modalState.bdProyectoId, token) || {};
+  const originalBdProyecto = originalBdProyectoData || {};
   
   const fullPayloadBdProyecto = {
     id_bdproyecto: originalBdProyecto.id_bdproyecto ?? null,
@@ -1550,19 +1626,19 @@ if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
     fullPayloadBdProyecto.id_hijo = fullPayloadBdProyecto.id_hijo ?? null;
   }
 
-  console.log('[PUT bdproyecto payload]', fullPayloadBdProyecto);
+  dbg('[PUT bdproyecto payload]', fullPayloadBdProyecto);
   const path = BD_PROYECTO_PLURAL ? "bdproyectos" : "bdproyecto";
-  requests.push(fetch(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
+  requests.push(requestWithRetry(`${API_BASE}/${path}/${modalState.bdProyectoId}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadBdProyecto)
-  }).then(r => ({ target: "bdproyecto", r })));
+  }, 'PUT bdproyecto').then(r => ({ target: "bdproyecto", r })));
 }
 
 // Para reclutamiento: payload parcial (solo campos modificados)
 if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).length) {
-    // Construir payload completo requerido por UpdateReclutamiento
-    const original = await getReclutamientoById(modalState.reclutamientoId, token) || {};
+  // Construir payload completo requerido por UpdateReclutamiento
+  const original = originalReclutamientoData || {};
 
     // Mapeo UI -> backend (ya son iguales en la mayoría de casos)
     const fullPayload = {
@@ -1806,13 +1882,13 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
       delete fullPayload.calificacion_tiro_blanco_final;
     }
 
-    console.log('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
+  dbg('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
 
-    requests.push(fetch(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, {
+    requests.push(requestWithRetry(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, {
       method:"PUT",
       headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
       body:JSON.stringify(fullPayload)
-    }).then(r => ({target:"reclutamiento", r, debugPayload: fullPayload})));
+    }, 'PUT reclutamiento').then(r => ({target:"reclutamiento", r, debugPayload: fullPayload})));
   }
 
   const results = await Promise.all(requests);

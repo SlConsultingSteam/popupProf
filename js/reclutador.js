@@ -1,3 +1,125 @@
+// Base de la API (misma que usa reclutamientos.js)
+const API_BASE = "https://api-postgre-ee5da0d4a499.herokuapp.com";
+
+async function postJSON(url, body, label) {
+    const token = sessionStorage.getItem('token');
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+        if (resp.status === 401) {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+            return null;
+        }
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            console.error(`[${label}] ${resp.status}`, data);
+            throw new Error(data?.error || `Error ${resp.status}`);
+        }
+        return data;
+    } catch (e) {
+        console.error(`[${label}] Network error`, e);
+        throw e;
+    }
+}
+
+function showAlert(opts) {
+    if (typeof Swal !== 'undefined') return Swal.fire(opts);
+    alert(opts?.text || opts?.title || 'Aviso');
+    return Promise.resolve();
+}
+
+// Manejo de envío del formulario Derma Ligh (26)
+safeAddListener('form1-form', 'submit', async function (e) {
+    e.preventDefault();
+    const btn = e.submitter || this.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+
+    // Tomar valores del formulario
+    const fechaEnvio = (document.getElementById('fechaEnvio')?.value || '').trim();
+    const identificacion = (document.getElementById('identificacion')?.value || '').trim();
+    const nombre = (document.getElementById('nombre')?.value || '').trim();
+    const nacionalidad = (document.getElementById('nacionalidad')?.value || '').trim();
+    const edad = (document.getElementById('edad')?.value || '').trim();
+    const sexo = (document.getElementById('sexo')?.value || '').trim();
+    const direccion = (document.getElementById('direccion')?.value || '').trim();
+    const barrio = (document.getElementById('barrio')?.value || '').trim();
+    const nse = (document.getElementById('nse')?.value || '').trim();
+    const telefono1 = (document.getElementById('telefono1')?.value || '').trim();
+    const telefono2 = (document.getElementById('telefono2')?.value || '').trim();
+    const fechaNacimientoBebe = (document.getElementById('fechaNacimientoBebe')?.value || '').trim();
+    const usuarioCrema = (document.getElementById('usuarioCrema')?.value || '').trim();
+
+    // Guardar JSON localmente (último envío)
+    const formJson = {
+        proyecto: 'Derma Ligh (26)',
+        fecha_envio: fechaEnvio || null,
+        documento: identificacion || null,
+        nombre_participante: nombre || null,
+        nacionalidad: nacionalidad || null,
+        edad: edad ? Number(edad) : null,
+        sexo: sexo || null,
+        direccion: direccion || null,
+        barrio: barrio || null,
+        nse: nse ? Number(nse) : null,
+        telefono_1: telefono1 || null,
+        telefono_2: telefono2 || null,
+        fecha_nacimiento_bebe: fechaNacimientoBebe || null,
+        usuario_crema: usuarioCrema || null
+    };
+    try { localStorage.setItem('dermaligh26_form_last', JSON.stringify(formJson)); } catch {}
+
+    // Verificar existencia por documento y teléfono 1
+    if (!identificacion && !telefono1) {
+        await showAlert({ icon: 'warning', title: 'Datos incompletos', text: 'Proporcione documento o teléfono 1 para validar existencia.' });
+        if (btn) btn.disabled = false; return;
+    }
+
+    // Nota: asumimos que si existe === true -> ya está en base y NO se inserta; si existe === false -> se inserta
+    // (el texto original parecía invertido).
+    try {
+        const existeResp = await postJSON(`${API_BASE}/participantes/existe`, { documento: identificacion, telefono: telefono1 }, 'participantes/existe');
+        if (existeResp && existeResp.existe === true) {
+            await showAlert({ icon: 'info', title: 'Participante existente', text: 'El participante ya se encuentra en nuestra base de datos.' });
+            if (btn) btn.disabled = false; return;
+        }
+    } catch (e1) {
+        await showAlert({ icon: 'error', title: 'Error al validar', text: e1.message || 'No fue posible validar el participante.' });
+        if (btn) btn.disabled = false; return;
+    }
+
+    // Construir payload de inserción para Participantes (solo campos de la tabla Participantes)
+    const payloadInsert = {};
+    if (nombre) payloadInsert.nombre_participante = nombre;
+    if (identificacion) payloadInsert.documento = identificacion;
+    if (telefono1) payloadInsert.telefono_1 = telefono1;
+    if (telefono2) payloadInsert.telefono_2 = telefono2;
+    if (barrio) payloadInsert.barrio = barrio;
+    if (direccion) payloadInsert.direccion = direccion;
+    if (nacionalidad) payloadInsert.nacionalidad = nacionalidad;
+    if (edad) payloadInsert.edad = Number(edad);
+    if (sexo) payloadInsert.sexo = sexo;
+    if (nse) payloadInsert.nse = Number(nse);
+    if (fechaEnvio) payloadInsert.fecha_registro = fechaEnvio;
+    payloadInsert.origen_dato = 'RECLUTADORA';
+
+    try {
+        const insertResp = await postJSON(`${API_BASE}/participantes`, payloadInsert, 'insert participante');
+        await showAlert({ icon: 'success', title: 'Registro exitoso', text: `Participante registrado correctamente.` });
+        // Opcional: limpiar el formulario
+        e.target.reset();
+    } catch (e2) {
+        await showAlert({ icon: 'error', title: 'Error al registrar', text: e2.message || 'No fue posible registrar al participante.' });
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+});
 // Espera a que el contenido del DOM esté completamente cargado antes de ejecutar el script
 document.addEventListener("DOMContentLoaded", function () {
     // Generar dinámicamente las opciones del filtro Estado
