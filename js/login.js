@@ -31,14 +31,36 @@ async function handleLogin(event) {
       sessionStorage.setItem("rol", data.rol);
       sessionStorage.setItem("expira_iso", data.expiraISO);
 
+      const rol = (data.rol || '').toString().toUpperCase();
+      let destino = '';
+      if (rol === 'RECLUTADORA') destino = 'reclutador.html';
+      else if (rol === 'PROFESIONAL') destino = 'index.html';
+
+      if (!destino) {
+        // Rol no autorizado: advertencia y vuelta a login
+        Swal.fire({
+          icon: 'warning',
+          title: 'Acceso denegado',
+          text: 'Usuario inválido o sin permisos para acceder.',
+          confirmButtonText: 'Aceptar'
+        }).then(() => {
+          sessionStorage.clear();
+          buttonText.textContent = "Ingresar";
+          button.disabled = false;
+          isSubmitting = false;
+        });
+        return;
+      }
+
+      // Mensaje de acceso unificado (reemplaza el antiguo de bienvenida)
       Swal.fire({
         icon: 'success',
-        title: '¡Bienvenido!',
-        text: `Bienvenido ${data.usuario}!`,
-        timer: 2000,
+        title: 'Acceso concedido',
+        html: `<div style="font-size:14px;">Bienvenido(a) <b>${data.usuario}</b><br>Rol: <b>${rol}</b><br>Redirigiendo...</div>`,
+        timer: 1800,
         showConfirmButton: false
       }).then(() => {
-        window.location.href = "index.html";
+        window.location.href = destino;
       });
     } else {
       const errorText = await response.text();

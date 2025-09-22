@@ -439,22 +439,59 @@ async function fetchJSON(url, token, label) {
 async function getReclutamientos(idProfesional, token) {
   const key = `prof_${idProfesional}`;
   if (cacheReclutamientos.has(key)) return cacheReclutamientos.get(key);
-  const data = await fetchJSON(`${API_BASE}/reclutamientos/profesional/${idProfesional}`, token, "reclutamientos");
-  cacheReclutamientos.set(key, Array.isArray(data) ? data : []);
-  return cacheReclutamientos.get(key);
+
+  // Nueva fuente: /reclutamiento-profesionales/{id_usuario}
+  console.log(`[DEBUG] getReclutamientos: fetching /reclutamiento-profesionales/${idProfesional}`);
+  const enlaces = await fetchJSON(
+    `${API_BASE}/reclutamiento-profesionales/${idProfesional}`,
+    token,
+    "reclutamiento-profesionales"
+  );
+  console.log(`[DEBUG] /reclutamiento-profesionales response:`, enlaces);
+
+  // Extraer IDs de reclutamiento y normalizar
+  const ids = Array.isArray(enlaces)
+    ? Array.from(
+        new Set(
+          enlaces
+            .map(e => e?.id_reclutamiento ?? e?.idReclutamiento ?? e?.reclutamiento_id ?? e?.id)
+            .filter(Boolean)
+        )
+      )
+    : [];
+
+  if (!ids.length) {
+    cacheReclutamientos.set(key, []);
+    return [];
+  }
+
+  // Obtener cada reclutamiento completo
+  dbg(`[DEBUG] getReclutamientos: will fetch reclutamientos for ids:`, ids);
+  const results = await Promise.all(ids.map(id => getReclutamientoById(id, token)));
+  const recls = results.filter(Boolean);
+  dbg(`[DEBUG] getReclutamientos: retrieved ${recls.length} reclutamientos`);
+  cacheReclutamientos.set(key, recls);
+  return recls;
 }
 
 // Reclutamiento individual (para PUT completo)
 async function getReclutamientoById(id, token) {
+  dbg(`[DEBUG] getReclutamientoById called with id=${id}`);
   // Buscar primero en cacheReclutamientos
-  for (const arr of cacheReclutamientos.values()) {
+  for (const [cacheKey, arr] of cacheReclutamientos.entries()) {
     if (Array.isArray(arr)) {
       const found = arr.find(r => String(r.id) === String(id));
-      if (found) return found;
+      if (found) {
+  dbg(`[DEBUG] getReclutamientoById: found in cache key=${cacheKey}`, found);
+        return found;
+      }
     }
   }
   // Fallback a endpoint directo si existe
-  return await fetchJSON(`${API_BASE}/reclutamientos/${id}`, token, `reclutamiento(${id})`);
+  dbg(`[DEBUG] getReclutamientoById: fetching ${API_BASE}/reclutamientos/${id}`);
+  const fetched = await fetchJSON(`${API_BASE}/reclutamientos/${id}`, token, `reclutamiento(${id})`);
+  dbg(`[DEBUG] getReclutamientoById fetched:`, fetched);
+  return fetched;
 }
 
 async function getBdProyecto(id, token) {
@@ -777,6 +814,11 @@ let modalState = {
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
 const DEBUG_UI = false; // activar panel debug en modal
+
+// Helper de logging que respeta DEBUG_UI
+function dbg(...args) {
+  if (DEBUG_UI) console.log(...args);
+}
 
 function applyTimeOffset(dateStr){
   if(!dateStr) return null;
