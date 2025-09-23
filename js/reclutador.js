@@ -218,31 +218,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Selecciona el elemento <select> con id="proyectos"
     const selectProyectos = document.getElementById("proyectos");
 
-    // Mapea value del select a los collapse ids que deben abrirse
-    const proyectoPanelMap = {
-        // value: [collapseIds...]
-        '1': ['collapseTwo', 'collapseOne'] // Derma Ligh (26): mostrar Información (collapseTwo) y Formulario (collapseOne)
-        // agrega más mappings si tienes más proyectos
-    };
-
-    function setCollapseStateForProject(value) {
-        // cerrar todos los panels mapeados primero
-        const allPanels = new Set(Object.values(proyectoPanelMap).flat());
-        allPanels.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const inst = bootstrap.Collapse.getInstance(el) || new bootstrap.Collapse(el, { toggle: false });
-            inst.hide();
-        });
-        // mostrar solo los mapeados
-        const panels = proyectoPanelMap[String(value)] || [];
-        panels.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const inst = bootstrap.Collapse.getInstance(el) || new bootstrap.Collapse(el, { toggle: false });
-            inst.show();
-        });
-    }
+    // Ya no se abren automáticamente los acordeones al seleccionar un proyecto
+    // El usuario debe abrirlos manualmente
 
     // Selecciona todos los botones del acordeón (para expandir/cerrar secciones)
     const accordionButtons = document.querySelectorAll(".accordion-button");
@@ -302,15 +279,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const infoEl = document.getElementById(infoId);
             if (formEl) formEl.style.display = "block";
             if (infoEl) infoEl.style.display = "block";
-            // Abrir collapses mapeados para este proyecto
-            setCollapseStateForProject(proyectoSeleccionado);
+            // Ya no se abren automáticamente los acordeones
         }
     });
 
-    // Aplicar estado inicial de collapses según el value preseleccionado
-    document.addEventListener('DOMContentLoaded', () => {
-        if (selectProyectos) setCollapseStateForProject(selectProyectos.value);
-    });
+    // Ya no se abren automáticamente los acordeones al cargar la página
 
     // Cierra los acordeones al cargar la página
     closeAccordions();
