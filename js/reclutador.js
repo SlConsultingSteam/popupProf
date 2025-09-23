@@ -105,6 +105,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
     const telefono2 = (document.getElementById('telefono2')?.value || '').trim();
     const fechaNacimientoBebe = (document.getElementById('fechaNacimientoBebe')?.value || '').trim();
     const usuarioCrema = (document.getElementById('usuarioCrema')?.value || '').trim();
+    const ciudad = (document.getElementById('ciudad')?.value || '').trim();
 
     // Guardar JSON localmente (último envío)
     const formJson = {
@@ -156,6 +157,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
     if (sexo) payloadInsert.sexo = sexo;
     if (nse) payloadInsert.nse = nse;
     if (fechaEnvio) payloadInsert.fecha_registro = fechaEnvio;
+    if (ciudad) payloadInsert.ciudad = ciudad.toUpperCase();
 
     // usar nombre completo del usuario (si existe) como origen_dato, fallback 'RECLUTADORA'
     const origenFromLogin = sessionStorage.getItem('nombre_completo') || '';
