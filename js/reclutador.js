@@ -1,3 +1,4 @@
+
 // Base de la API (misma que usa reclutamientos.js)
 const API_BASE = "https://api-postgre-ee5da0d4a499.herokuapp.com";
 
@@ -212,22 +213,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
 });
 // Espera a que el contenido del DOM esté completamente cargado antes de ejecutar el script
 document.addEventListener("DOMContentLoaded", function () {
-    // Generar dinámicamente las opciones del filtro Estado
-    function actualizarOpcionesEstado() {
-        const filtroEstado = document.getElementById("estado");
-        const filas = document.querySelectorAll("#seguimiento-tbody tr");
-        const estadosSet = new Set();
-        filas.forEach(fila => {
-            if (fila.id === "seguimiento-mensaje-no-resultados") return;
-            const estado = (fila.children[3] && fila.children[3].textContent) ? fila.children[3].textContent.trim() : "";
-            if (estado) estadosSet.add(estado);
-        });
-        filtroEstado.innerHTML = '<option value="">TODOS</option>';
-        Array.from(estadosSet).sort().forEach(estado => {
-            filtroEstado.innerHTML += `<option value="${estado}">${estado}</option>`;
-        });
-    }
-    actualizarOpcionesEstado();
+    // Eliminada la función y llamada innecesaria de actualizarOpcionesEstado. El filtro de Estado se actualizará correctamente después de cargar los datos.
 
     // Selecciona el elemento <select> con id="proyectos"
     const selectProyectos = document.getElementById("proyectos");
@@ -384,8 +370,8 @@ safeAddListener("partedol", "input", function (event) {
     this.value = this.value.replace(/\d/g, '');
 });
 
-// Filtro real por estado y buscador para seguimiento
-document.addEventListener("DOMContentLoaded", function () {
+// Filtros de estado y buscador para seguimiento
+function setupSeguimientoFiltros() {
     const filtroEstado = document.getElementById("estado");
     const buscador = document.getElementById("buscadorSeguimiento");
 
@@ -394,24 +380,25 @@ document.addEventListener("DOMContentLoaded", function () {
         return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
-    async function recargarSeguimiento() {
-        const estadoSeleccionado = filtroEstado ? filtroEstado.value : "";
-        await loadSeguimiento(estadoSeleccionado);
-        updateEstadoOptionsFromSeguimiento();
-        // Aplica el filtro de búsqueda después de recargar
-        filtrarBusqueda();
-    }
-
-    function filtrarBusqueda() {
+    function filtrarTabla() {
+        const estadoSeleccionado = filtroEstado ? filtroEstado.value.toLowerCase() : "";
         const textoBusqueda = buscador ? quitarTildes(buscador.value.trim().toLowerCase()) : "";
+
+        // Seleccionar filas actuales (excluyendo mensaje de no resultados)
         const filas = document.querySelectorAll("#seguimiento-tbody tr");
         let visibles = 0;
         filas.forEach(fila => {
             if (fila.id === "seguimiento-mensaje-no-resultados") return;
+            const estado = (fila.children[3] && fila.children[3].textContent) ? fila.children[3].textContent.trim().toLowerCase() : "";
             const nombre = (fila.children[0] && fila.children[0].textContent) ? quitarTildes(fila.children[0].textContent.trim().toLowerCase()) : "";
             const telefono = (fila.children[1] && fila.children[1].textContent) ? quitarTildes(fila.children[1].textContent.trim().toLowerCase()) : "";
+
+            // Filtro por estado (exacto)
+            const coincideEstado = estadoSeleccionado === "" || estado === estadoSeleccionado;
+            // Filtro por nombre o teléfono (sin tildes)
             const coincideBusqueda = textoBusqueda === "" || nombre.includes(textoBusqueda) || telefono.includes(textoBusqueda);
-            if (coincideBusqueda) {
+
+            if (coincideEstado && coincideBusqueda) {
                 fila.style.display = "";
                 visibles++;
             } else {
@@ -425,15 +412,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (filtroEstado) {
-        filtroEstado.addEventListener("change", recargarSeguimiento);
+        filtroEstado.removeEventListener("change", filtrarTabla);
+        filtroEstado.addEventListener("change", filtrarTabla);
     }
     if (buscador) {
-        buscador.addEventListener("input", filtrarBusqueda);
+        buscador.removeEventListener("input", filtrarTabla);
+        buscador.addEventListener("input", filtrarTabla);
     }
-});
+    // Aplicar filtro al cargar datos
+    setTimeout(filtrarTabla, 300);
+}
 
-// Cargar datos de Seguimiento desde la API según el origen (nombre_completo del usuario) y estado
-async function loadSeguimiento(estadoFiltro = "") {
+document.addEventListener("DOMContentLoaded", setupSeguimientoFiltros);
+
+// Cargar datos de Seguimiento desde la API según el origen (nombre_completo del usuario)
+async function loadSeguimiento() {
     const tbody = document.getElementById('seguimiento-tbody');
     if (!tbody) return;
 
@@ -457,6 +450,7 @@ async function loadSeguimiento(estadoFiltro = "") {
 
     // Construir filas con datos complementarios (bdproyecto, proyecto y reclutamientos)
     const rows = [];
+    const estadosSet = new Set();
     for (const p of participantes) {
         const nombre = p?.nombre_participante || p?.nombre || '';
         const telefono = p?.telefono_1 || p?.telefono1 || '';
@@ -486,6 +480,8 @@ async function loadSeguimiento(estadoFiltro = "") {
             }
         }
 
+        if (estado) estadosSet.add(estado);
+
         if (idProyecto != null) {
             try {
                 const proj = await getJSON(`${API_BASE}/proyectos/${idProyecto}`, 'proyectos/id');
@@ -513,10 +509,7 @@ async function loadSeguimiento(estadoFiltro = "") {
             }
         }
 
-        // Filtrar por estado si se seleccionó uno
-        if (!estadoFiltro || (estado && estado.toLowerCase() === estadoFiltro.toLowerCase())) {
-            rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad, observaciones });
-        }
+        rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad, observaciones });
     }
 
     // Renderizar filas
@@ -539,23 +532,27 @@ async function loadSeguimiento(estadoFiltro = "") {
     // Mostrar u ocultar mensaje de no resultados
     const mensaje = document.getElementById('seguimiento-mensaje-no-resultados');
     if (mensaje) mensaje.style.display = rows.length === 0 ? 'table-row' : 'none';
+
+    // Actualizar el filtro de estado directamente desde los datos
+    const filtroEstado = document.getElementById('estado');
+    if (filtroEstado) {
+        filtroEstado.innerHTML = '<option value="">TODOS</option>';
+        Array.from(estadosSet).sort().forEach(estado => {
+            filtroEstado.innerHTML += `<option value="${estado}">${estado}</option>`;
+        });
+    }
+
+    // Re-enlazar buscador y filtro tras recarga de la tabla
+    if (typeof setupSeguimientoFiltros === 'function') {
+        setupSeguimientoFiltros();
+    }
 }
 
 // Actualiza el selector de Estado basado en las filas actuales del seguimiento
 function updateEstadoOptionsFromSeguimiento() {
-    const filtroEstado = document.getElementById('estado');
-    const tbody = document.getElementById('seguimiento-tbody');
-    if (!filtroEstado || !tbody) return;
-    const filas = Array.from(tbody.querySelectorAll('tr')).filter(tr => tr.id !== 'seguimiento-mensaje-no-resultados');
-    const estadosSet = new Set();
-    filas.forEach(fila => {
-        const estado = (fila.children[3] && fila.children[3].textContent) ? fila.children[3].textContent.trim() : '';
-        if (estado) estadosSet.add(estado);
-    });
-    filtroEstado.innerHTML = '<option value="">TODOS</option>';
-    Array.from(estadosSet).sort().forEach(estado => {
-        filtroEstado.innerHTML += `<option value="${estado}">${estado}</option>`;
-    });
+    // Esta función ya no es necesaria, el filtro se llena directamente desde los datos en loadSeguimiento
+    // Se deja vacía para compatibilidad si es llamada en otro lugar
+    return;
 }
 
 // Escape básico para HTML
@@ -569,30 +566,58 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Disparar la carga de seguimiento al iniciar y delegar eventos de observación
+// Disparar la carga de seguimiento al iniciar
 document.addEventListener('DOMContentLoaded', () => {
-    // Carga inicial
-    loadSeguimiento().then(() => updateEstadoOptionsFromSeguimiento());
-    // Delegación de eventos para los botones de observación
-    const tbody = document.getElementById('seguimiento-tbody');
-    if (tbody) {
-        tbody.addEventListener('click', function (e) {
-            const btn = e.target.closest('.btn-observacion');
-            if (btn) {
-                const nombre = btn.getAttribute('data-nombre') || '';
-                const observacion = btn.getAttribute('data-observacion') || '';
-                // Título del modal
-                const modalTitle = document.getElementById('modalObservacionUnicaLabel');
-                if (modalTitle) modalTitle.textContent = `OBSERVACIÓN DE: ${nombre}`;
-                // Textarea de observación
-                const textarea = document.getElementById('modalObservacionUnicaTextarea');
-                if (textarea) textarea.value = observacion;
-                // Mostrar el modal
-                const modal = new bootstrap.Modal(document.getElementById('modalObservacionUnica'));
-                modal.show();
+    loadSeguimiento()
+        .then(() => {
+            // Delegación de eventos para los botones de observación
+            const tbody = document.getElementById('seguimiento-tbody');
+            if (tbody) {
+                tbody.addEventListener('click', function (e) {
+                    const btn = e.target.closest('.btn-observacion');
+                    if (btn) {
+                        const nombre = btn.getAttribute('data-nombre') || '';
+                        const observacion = btn.getAttribute('data-observacion') || '';
+                        // Título del modal
+                        const modalTitle = document.getElementById('modalObservacionUnicaLabel');
+                        if (modalTitle) modalTitle.textContent = `OBSERVACIÓN DE: ${nombre}`;
+                        // Textarea de observación
+                        const textarea = document.getElementById('modalObservacionUnicaTextarea');
+                        if (textarea) textarea.value = observacion;
+                        // Mostrar el modal
+                        const modalEl = document.getElementById('modalObservacionUnica');
+                        if (!modalEl) {
+                            console.error('No se encontró el modalObservacionUnica en el DOM');
+                            return;
+                        }
+                        // Cerrar cualquier modal abierto antes
+                        try {
+                            const modals = document.querySelectorAll('.modal.show');
+                            modals.forEach(m => {
+                                const inst = bootstrap.Modal.getInstance(m);
+                                if (inst) inst.hide();
+                            });
+                        } catch (e) { console.warn('Error cerrando modals previos', e); }
+                        try {
+                            let modal = bootstrap.Modal.getInstance(modalEl);
+                            if (!modal) {
+                                modal = new bootstrap.Modal(modalEl);
+                            }
+                            modal.show();
+                            setTimeout(() => { modalEl.focus && modalEl.focus(); }, 200);
+                            console.log('Modal abierto correctamente');
+                        } catch (e) {
+                            console.error('Error mostrando el modal:', e);
+                        }
+                    } else {
+                        console.log('No se encontró btn-observacion en el click');
+                    }
+                });
+            } else {
+                console.error('No se encontró el tbody de seguimiento');
             }
-        });
-    }
+        })
+        .catch(err => console.error('Fallo cargando seguimiento', err));
 });
 
 // *------------**************-------------------*
@@ -664,5 +689,47 @@ safeAddListener("peso", "input", function () {
         if (peso > 20) peso = 20; // Máximo permitido
 
         this.value = peso;
+    }
+});
+
+
+// Sincronizar scroll horizontal arriba y abajo sin usar un clon de tabla que bloquee eventos
+document.addEventListener('DOMContentLoaded', function () {
+    var topScroll = document.querySelector('.table-scroll-top');
+    var mainScroll = document.querySelectorAll('.table-responsive-seguimiento')[1];
+    if (topScroll && mainScroll) {
+        var table = mainScroll.querySelector('table');
+        if (table) {
+            // Crear un div vacío solo para el scroll, igualando el ancho de la tabla
+            var scrollSpacer = document.createElement('div');
+            function updateSpacerWidth() {
+                scrollSpacer.style.width = table.offsetWidth + 'px';
+            }
+            updateSpacerWidth();
+            window.addEventListener('resize', updateSpacerWidth);
+            // Si el contenido de la tabla cambia dinámicamente
+            var resizeObserver = new (window.ResizeObserver || window.MutationObserver)(function () {
+                updateSpacerWidth();
+            });
+            if (window.ResizeObserver) {
+                resizeObserver.observe(table);
+            } else {
+                resizeObserver.observe(table, { childList: true, subtree: true, attributes: true });
+            }
+            // Limpiar y agregar el spacer
+            topScroll.innerHTML = '';
+            topScroll.appendChild(scrollSpacer);
+            topScroll.style.height = '18px';
+            topScroll.style.position = 'relative';
+            topScroll.style.overflowX = 'auto';
+            topScroll.style.overflowY = 'hidden';
+            // Sincronizar scroll
+            topScroll.addEventListener('scroll', function () {
+                mainScroll.scrollLeft = topScroll.scrollLeft;
+            });
+            mainScroll.addEventListener('scroll', function () {
+                topScroll.scrollLeft = mainScroll.scrollLeft;
+            });
+        }
     }
 });

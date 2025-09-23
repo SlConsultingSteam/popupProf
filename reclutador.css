@@ -10,6 +10,7 @@
 .table-scroll-top-spacer {
     height: 1px;
 }
+
 /* --- LAYOUT Y ENCABEZADO --- */
 body {
     font-family: "Poppins", sans-serif;
@@ -631,9 +632,12 @@ input[type="number"] {
 
 /* Ocultar barra de scroll horizontal inferior, pero permitir scroll */
 .table-responsive-seguimiento:not(.table-scroll-top) {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE 10+ */
 }
+
 .table-responsive-seguimiento:not(.table-scroll-top)::-webkit-scrollbar {
     display: none;
 }

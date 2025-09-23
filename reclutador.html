@@ -280,8 +280,10 @@
                                                 <label for="estado">Estado</label>
                                                 <select id="estado" name="estado" class="selector-filtro">
                                                     <option value="">TODOS</option>
-                                                    <option value="P_PACIENTE_FALLECIDO">P_PACIENTE_FALLECIDO</option>
-                                                    <option value="NO_CONTESTA">NO_CONTESTA</option>
+                                                    <!-- <option value="EFECTIVO">Efectivo</option>
+                                                    <option value="NO LE INTERESA">No le interesa</option>
+                                                    <option value="NO EFECTIVO">No efectivo</option>
+                                                    <option value="VOLVER A LLAMAR">Volver a llamar</option> -->
                                                 </select>
                                             </div>
                                         </div>
@@ -326,7 +328,8 @@
                                                             for="modalObservacionUnicaTextarea">Observación:</label>
                                                         <textarea id="modalObservacionUnicaTextarea"
                                                             class="form-control border-2 modal-textarea-observacion"
-                                                            rows="4" readonly></textarea></div>
+                                                            rows="4" readonly></textarea>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -348,57 +351,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/reclutador.js"></script>
-    <script>
-    // Sincronizar scroll horizontal arriba y abajo y ajustar el ancho del clon dinámicamente
-    document.addEventListener('DOMContentLoaded', function() {
-        var topScroll = document.querySelector('.table-scroll-top');
-        var mainScroll = document.querySelectorAll('.table-responsive-seguimiento')[1];
-        if (topScroll && mainScroll) {
-            var table = mainScroll.querySelector('table');
-            if (table) {
-                var fakeTable = table.cloneNode(true);
-                fakeTable.style.visibility = 'hidden';
-                fakeTable.style.pointerEvents = 'none';
-                fakeTable.style.margin = '0';
-                fakeTable.style.height = '0';
-                fakeTable.style.minHeight = '0';
-                fakeTable.style.maxHeight = '0';
-                fakeTable.style.position = 'absolute';
-                fakeTable.style.top = '0';
-                fakeTable.style.left = '0';
-                // Función para actualizar el ancho del clon
-                function updateFakeTableWidth() {
-                    fakeTable.style.width = table.offsetWidth + 'px';
-                }
-                updateFakeTableWidth();
-                // Actualizar el ancho cuando cambie el tamaño de la ventana o la tabla
-                window.addEventListener('resize', updateFakeTableWidth);
-                // Si el contenido de la tabla cambia dinámicamente
-                var resizeObserver = new (window.ResizeObserver || window.MutationObserver)(function() {
-                    updateFakeTableWidth();
-                });
-                if (window.ResizeObserver) {
-                    resizeObserver.observe(table);
-                } else {
-                    // Fallback para navegadores antiguos
-                    resizeObserver.observe(table, { childList: true, subtree: true, attributes: true });
-                }
-                topScroll.appendChild(fakeTable);
-                topScroll.style.height = '18px';
-                topScroll.style.position = 'relative';
-                topScroll.style.overflowX = 'auto';
-                topScroll.style.overflowY = 'hidden';
-                // Sincronizar scroll
-                topScroll.addEventListener('scroll', function() {
-                    mainScroll.scrollLeft = topScroll.scrollLeft;
-                });
-                mainScroll.addEventListener('scroll', function() {
-                    topScroll.scrollLeft = mainScroll.scrollLeft;
-                });
-            }
-        }
-    });
-    </script>
 </body>
 
 </html>
