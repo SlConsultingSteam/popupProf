@@ -1713,6 +1713,33 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
         }
         continue;
       }
+      // NUEVO: alias UI 'tiempo_estatus_encuadre' -> backend 'tiempo_encuadre'
+      if (kOrig === 'tiempo_estatus_encuadre') {
+        if (typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+          const parts = v.split(':').map(Number);
+          let totalSeconds = 0;
+          if (parts.length === 2) totalSeconds = parts[0]*3600 + parts[1]*60;
+          else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
+          fullPayload.tiempo_encuadre = { Duration: totalSeconds * 1e9, Valid: true };
+        }
+        continue;
+      }
+      // NUEVO: tiempos de evaluación monádica en arreglo de Durations
+      if (kOrig === 'tiempo_evaluacion_monadica' || kOrig.startsWith('tiempo_monadica_muestras')) {
+        if (typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+          let idx = 0;
+          const m = kOrig.match(/^tiempo_monadica_muestras_(\d+)$/);
+          if (m) idx = Number(m[1]);
+          const parts = v.split(':').map(Number);
+          let totalSeconds = 0;
+          if (parts.length === 2) totalSeconds = parts[0]*3600 + parts[1]*60;
+          else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
+          const arr = Array.isArray(fullPayload.tiempo_monadica_muestras) ? fullPayload.tiempo_monadica_muestras.slice() : [];
+          arr[idx] = { Duration: totalSeconds * 1e9, Valid: true };
+          fullPayload.tiempo_monadica_muestras = arr;
+        }
+        continue;
+      }
       if (kOrig === 'modalidad_entrevista_final') { // alias a modalidad_entrevista backend
         fullPayload.modalidad_entrevista = v;
         continue;
@@ -1731,6 +1758,18 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
         else if (parts.length === 3) totalSeconds = parts[0]*3600 + parts[1]*60 + parts[2];
         const ns = totalSeconds * 1e9;
         fullPayload[k] = { Duration: ns, Valid: true };
+      } else if (k === 'tiempo_e_inicial' && typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+        const parts = v.split(':').map(Number);
+        const totalSeconds = (parts.length === 2) ? parts[0]*3600 + parts[1]*60 : parts[0]*3600 + parts[1]*60 + parts[2];
+        fullPayload.tiempo_e_inicial = { Duration: totalSeconds * 1e9, Valid: true };
+      } else if (k === 'tiempo_final' && typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+        const parts = v.split(':').map(Number);
+        const totalSeconds = (parts.length === 2) ? parts[0]*3600 + parts[1]*60 : parts[0]*3600 + parts[1]*60 + parts[2];
+        fullPayload.tiempo_final = { Duration: totalSeconds * 1e9, Valid: true };
+      } else if (k === 'tiempo_recibo' && typeof v === 'string' && INTERVAL_REGEX.test(v)) {
+        const parts = v.split(':').map(Number);
+        const totalSeconds = (parts.length === 2) ? parts[0]*3600 + parts[1]*60 : parts[0]*3600 + parts[1]*60 + parts[2];
+        fullPayload.tiempo_recibo = { Duration: totalSeconds * 1e9, Valid: true };
       } else if (k === 'fecha_entrevista_final') {
         fullPayload.fecha_final = v;
       } else if (k === 'modalidad_entrevista_final') {

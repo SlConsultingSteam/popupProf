@@ -62,6 +62,18 @@ async function handleLogin(event) {
       }).then(() => {
         window.location.href = destino;
       });
+
+      // después de recibir 'data' tras el login exitoso:
+      try {
+        const fullName = data.nombre_completo || data.NombreCompleto || data.nombreCompleto || '';
+        sessionStorage.setItem('token', data.token || '');
+        sessionStorage.setItem('usuario', data.usuario || '');
+        sessionStorage.setItem('id_usuario', String(data.id_usuario ?? data.ID ?? data.id ?? ''));
+        sessionStorage.setItem('rol', (data.rol || '').toUpperCase());
+        sessionStorage.setItem('nombre_completo', fullName);
+      } catch (e) {
+        // ...existing error handling...
+      }
     } else {
       const errorText = await response.text();
       errorMsg.textContent = errorText || "Usuario o contraseña incorrectos";

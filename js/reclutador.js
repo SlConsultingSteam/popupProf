@@ -29,10 +29,60 @@ async function postJSON(url, body, label) {
     }
 }
 
+// Helper GET con token y manejo básico de errores
+async function getJSON(url, label) {
+    const token = sessionStorage.getItem('token');
+    try {
+        const resp = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                Authorization: `Bearer ${token}`
+            }
+        });
+        if (resp.status === 401) {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+            return null;
+        }
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            console.error(`[${label}] ${resp.status}`, data);
+            throw new Error(data?.error || `Error ${resp.status}`);
+        }
+        return data;
+    } catch (e) {
+        console.error(`[${label}] Network error`, e);
+        throw e;
+    }
+}
+
 function showAlert(opts) {
     if (typeof Swal !== 'undefined') return Swal.fire(opts);
     alert(opts?.text || opts?.title || 'Aviso');
     return Promise.resolve();
+}
+
+// Formatea fecha ISO o YYYY-MM-DD a DD/MM/YYYY
+function formatDate(value) {
+    if (!value) return '';
+    try {
+        // Normalizar si viene con tiempo
+        const s = String(value).trim();
+        const ymd = s.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+        if (ymd) {
+            const [y, m, d] = ymd.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        const dt = new Date(s);
+        if (!isNaN(dt)) {
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const yy = dt.getFullYear();
+            return `${dd}/${mm}/${yy}`;
+        }
+    } catch { /* noop */ }
+    return String(value);
 }
 
 // Manejo de envío del formulario Derma Ligh (26)
@@ -46,7 +96,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
     const identificacion = (document.getElementById('identificacion')?.value || '').trim();
     const nombre = (document.getElementById('nombre')?.value || '').trim();
     const nacionalidad = (document.getElementById('nacionalidad')?.value || '').trim();
-    const edad = (document.getElementById('edad')?.value || '').trim();
+    const fechaNacimiento = (document.getElementById('fechaNacimiento')?.value || '').trim();
     const sexo = (document.getElementById('sexo')?.value || '').trim();
     const direccion = (document.getElementById('direccion')?.value || '').trim();
     const barrio = (document.getElementById('barrio')?.value || '').trim();
@@ -63,7 +113,6 @@ safeAddListener('form1-form', 'submit', async function (e) {
         documento: identificacion || null,
         nombre_participante: nombre || null,
         nacionalidad: nacionalidad || null,
-        edad: edad ? Number(edad) : null,
         sexo: sexo || null,
         direccion: direccion || null,
         barrio: barrio || null,
@@ -96,22 +145,63 @@ safeAddListener('form1-form', 'submit', async function (e) {
 
     // Construir payload de inserción para Participantes (solo campos de la tabla Participantes)
     const payloadInsert = {};
-    if (nombre) payloadInsert.nombre_participante = nombre;
+    if (nombre) payloadInsert.nombre_participante = nombre.toUpperCase();
     if (identificacion) payloadInsert.documento = identificacion;
-    if (telefono1) payloadInsert.telefono_1 = telefono1;
-    if (telefono2) payloadInsert.telefono_2 = telefono2;
-    if (barrio) payloadInsert.barrio = barrio;
-    if (direccion) payloadInsert.direccion = direccion;
+    if (telefono1) payloadInsert.telefono_1 = telefono1.toUpperCase();
+    if (telefono2) payloadInsert.telefono_2 = telefono2.toUpperCase();
+    if (barrio) payloadInsert.barrio = barrio.toUpperCase();
+    if (direccion) payloadInsert.direccion = direccion.toUpperCase();
     if (nacionalidad) payloadInsert.nacionalidad = nacionalidad;
-    if (edad) payloadInsert.edad = Number(edad);
+    if (fechaNacimiento) payloadInsert.fecha_nacimiento = fechaNacimiento;
     if (sexo) payloadInsert.sexo = sexo;
-    if (nse) payloadInsert.nse = Number(nse);
+    if (nse) payloadInsert.nse = nse;
     if (fechaEnvio) payloadInsert.fecha_registro = fechaEnvio;
-    payloadInsert.origen_dato = 'RECLUTADORA';
+
+    // usar nombre completo del usuario (si existe) como origen_dato, fallback 'RECLUTADORA'
+    const origenFromLogin = sessionStorage.getItem('nombre_completo') || '';
+    payloadInsert.origen_dato = origenFromLogin.trim() ? origenFromLogin : 'RECLUTADORA';
 
     try {
-        const insertResp = await postJSON(`${API_BASE}/participantes`, payloadInsert, 'insert participante');
-        await showAlert({ icon: 'success', title: 'Registro exitoso', text: `Participante registrado correctamente.` });
+        const resp = await postJSON(`${API_BASE}/participantes`, payloadInsert, 'participantes');
+        if (!resp || resp.status >= 400) {
+            showAlert({ icon: 'error', title: 'Error', text: 'Error al registrar participante' });
+            btn.disabled = false;
+            return;
+        }
+
+        // RESPUESTA ESPERADA: { "mensaje": "...", "id": nuevoID }
+        const created = await resp.json?.() || resp; // soporta postJSON que devuelva fetch Response o JSON directamente
+        const nuevoID = (created && (created.id ?? created.ID ?? created.Id)) || null;
+        if (!nuevoID) {
+            showAlert({ icon: 'warning', title: 'Atención', text: 'Participante creado pero no se obtuvo ID' });
+            btn.disabled = false;
+            return;
+        }
+
+        // Construir payload para BDProyectos y enviarlo si el participante se creó correctamente
+        try {
+            const proyectoSelect = document.getElementById('proyectos');
+            const idProyecto = proyectoSelect ? proyectoSelect.value : null;
+
+            const bdProyectoPayload = {
+                id_participante: Number(nuevoID),
+                id_proyecto: idProyecto ? Number(idProyecto) : null,
+                estado_participante: "EN PROCESO"
+            };
+            // eliminar claves null para payload limpio
+            Object.keys(bdProyectoPayload).forEach(k => { if (bdProyectoPayload[k] === null) delete bdProyectoPayload[k]; });
+
+            const respBd = await postJSON(`${API_BASE}/bdproyectos`, bdProyectoPayload, 'bdproyectos');
+            if (!respBd || respBd.status >= 400) {
+                showAlert({ icon: 'warning', title: 'Aviso', text: 'Participante creado pero no se pudo crear bdproyecto' });
+            } else {
+                showAlert({ icon: 'success', title: 'Éxito', text: 'Participante y bdProyecto creados correctamente' });
+            }
+        } catch (err) {
+            console.error('Error creando bdproyecto', err);
+            showAlert({ icon: 'error', title: 'Error', text: 'Ocurrió un error al crear bdProyecto' });
+        }
+
         // Opcional: limpiar el formulario
         e.target.reset();
     } catch (e2) {
@@ -141,6 +231,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Selecciona el elemento <select> con id="proyectos"
     const selectProyectos = document.getElementById("proyectos");
+
+    // Mapea value del select a los collapse ids que deben abrirse
+    const proyectoPanelMap = {
+        // value: [collapseIds...]
+        '1': ['collapseTwo','collapseOne'] // Derma Ligh (26): mostrar Información (collapseTwo) y Formulario (collapseOne)
+        // agrega más mappings si tienes más proyectos
+    };
+
+    function setCollapseStateForProject(value) {
+        // cerrar todos los panels mapeados primero
+        const allPanels = new Set(Object.values(proyectoPanelMap).flat());
+        allPanels.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const inst = bootstrap.Collapse.getInstance(el) || new bootstrap.Collapse(el, { toggle: false });
+            inst.hide();
+        });
+        // mostrar solo los mapeados
+        const panels = proyectoPanelMap[String(value)] || [];
+        panels.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const inst = bootstrap.Collapse.getInstance(el) || new bootstrap.Collapse(el, { toggle: false });
+            inst.show();
+        });
+    }
 
     // Selecciona todos los botones del acordeón (para expandir/cerrar secciones)
     const accordionButtons = document.querySelectorAll(".accordion-button");
@@ -179,7 +295,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Agrega un evento que se activa cuando cambia la selección en el <select>
     selectProyectos.addEventListener("change", function () {
-        const proyectoSeleccionado = this.value; // Obtiene el valor seleccionado en el <select>
+        const proyectoSeleccionado = this.value; // Obtiene el value seleccionado en el <select>
 
         if (proyectoSeleccionado) {
             toggleAccordionButtons(true); // Habilita los botones si hay un proyecto seleccionado
@@ -192,11 +308,22 @@ document.addEventListener("DOMContentLoaded", function () {
         formularios.forEach(form => form.style.display = "none");
         infoProyectos.forEach(info => info.style.display = "none");
 
-        // Si hay un proyecto seleccionado, muestra su formulario y su información
+        // Si hay un proyecto seleccionado, muestra su formulario e info (asume ids 'form<value>' y 'info<value>')
         if (proyectoSeleccionado) {
-            document.getElementById(proyectoSeleccionado).style.display = "block"; // Muestra el formulario del proyecto seleccionado
-            document.getElementById("info" + proyectoSeleccionado.slice(-1)).style.display = "block"; // Muestra la información del proyecto
+            const formId = 'form' + proyectoSeleccionado;
+            const infoId = 'info' + proyectoSeleccionado;
+            const formEl = document.getElementById(formId);
+            const infoEl = document.getElementById(infoId);
+            if (formEl) formEl.style.display = "block";
+            if (infoEl) infoEl.style.display = "block";
+            // Abrir collapses mapeados para este proyecto
+            setCollapseStateForProject(proyectoSeleccionado);
         }
+    });
+
+    // Aplicar estado inicial de collapses según el value preseleccionado
+    document.addEventListener('DOMContentLoaded', () => {
+        if (selectProyectos) setCollapseStateForProject(selectProyectos.value);
     });
 
     // Cierra los acordeones al cargar la página
@@ -304,6 +431,143 @@ document.addEventListener("DOMContentLoaded", function () {
     if (buscador) {
         buscador.addEventListener("input", filtrarTabla);
     }
+});
+
+// Cargar datos de Seguimiento desde la API según el origen (nombre_completo del usuario)
+async function loadSeguimiento() {
+    const tbody = document.getElementById('seguimiento-tbody');
+    if (!tbody) return;
+
+    // Limpia filas existentes y deja el mensaje de no resultados oculto
+    tbody.innerHTML = '<tr id="seguimiento-mensaje-no-resultados" style="display:none;"><td colspan="8" class="seguimiento-no-resultados-td">No se encontraron participantes con ese criterio.</td></tr>';
+
+    const origen = (sessionStorage.getItem('nombre_completo') || sessionStorage.getItem('usuario') || 'RECLUTADORA').trim();
+    if (!origen) return;
+
+    let participantes = [];
+    try {
+        const url = `${API_BASE}/participantes/origen/${encodeURIComponent(origen)}`;
+        const resp = await getJSON(url, 'participantes/origen');
+        if (Array.isArray(resp)) participantes = resp;
+        else if (resp) participantes = [resp];
+    } catch (e) {
+        console.error('Error cargando participantes por origen', e);
+        return;
+    }
+
+    // Construir filas con datos complementarios (bdproyecto, proyecto y reclutamientos)
+    const rows = [];
+    for (const p of participantes) {
+        const nombre = p?.nombre_participante || p?.nombre || '';
+        const telefono = p?.telefono_1 || p?.telefono1 || '';
+        const email = p?.correo_electronico || p?.correo || p?.email || '';
+        const fechaRegistro = formatDate(p?.fecha_registro || p?.fechaRegistro || '');
+        const idp = p?.id_participante ?? p?.id ?? p?.ID;
+
+        let estado = '';
+        let idProyecto = null;
+        let nombreProyecto = '';
+        let idBdProyecto = null;
+
+        if (idp != null) {
+            try {
+                // Nota: El backend expuesto indica /bdproyecto/{id}. Según indicación, {id} es id_participante
+                const bd = await getJSON(`${API_BASE}/bdproyectos/participante/${idp}`, 'bdproyecto');
+                const bdObj = Array.isArray(bd) ? (bd[0] || null) : bd;
+                if (bdObj) {
+                    estado = bdObj?.estado_participante || bdObj?.estado || '';
+                    idProyecto = bdObj?.id_proyecto ?? bdObj?.proyecto_id ?? null;
+                    idBdProyecto = bdObj?.id_bdproyecto ?? bdObj?.id ?? bdObj?.ID ?? null;
+                }
+            } catch (e) {
+                console.warn('Sin BDProyecto para participante', idp, e?.message || e);
+            }
+        }
+
+        if (idProyecto != null) {
+            try {
+                const proj = await getJSON(`${API_BASE}/proyectos/${idProyecto}`, 'proyectos/id');
+                nombreProyecto = proj?.nombre ?? proj?.nombre_proyecto ?? proj?.Nombre ?? `Proyecto ${idProyecto}`;
+            } catch (e) {
+                nombreProyecto = `Proyecto ${idProyecto}`;
+            }
+        }
+
+        let fechaEfectividad = '';
+        if (idBdProyecto != null) {
+            try {
+                const recls = await getJSON(`${API_BASE}/reclutamientos/bdproyecto/${idBdProyecto}`, 'reclutamientos/bdproyecto');
+                const arr = Array.isArray(recls) ? recls : (recls ? [recls] : []);
+                // Tomar la fecha_asignacion_g más reciente
+                let best = null;
+                for (const r of arr) {
+                    const f = r?.fecha_asignacion_g || r?.fechaAsignacionG || r?.fecha_asignacion || r?.fecha_g;
+                    if (!f) continue;
+                    if (!best || new Date(f) > new Date(best)) best = f;
+                }
+                if (best) fechaEfectividad = formatDate(best);
+            } catch (e) {
+                // sin reclutamientos
+            }
+        }
+
+        rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad });
+    }
+
+    // Renderizar filas
+    let html = '';
+    for (const r of rows) {
+        html += `<tr>` +
+            `<td>${escapeHtml(r.nombre)}</td>` +
+            `<td>${escapeHtml(r.telefono)}</td>` +
+            `<td>${escapeHtml(r.email)}</td>` +
+            `<td>${escapeHtml(r.estado)}</td>` +
+            `<td>${escapeHtml(r.fechaRegistro)}</td>` +
+            `<td>${escapeHtml(r.proyecto)}</td>` +
+            `<td>${escapeHtml(r.efectividad)}</td>` +
+            `<td>${escapeHtml(r.fechaEfectividad)}</td>` +
+        `</tr>`;
+    }
+    tbody.insertAdjacentHTML('beforeend', html);
+
+    // Mostrar u ocultar mensaje de no resultados
+    const mensaje = document.getElementById('seguimiento-mensaje-no-resultados');
+    if (mensaje) mensaje.style.display = rows.length === 0 ? 'table-row' : 'none';
+}
+
+// Actualiza el selector de Estado basado en las filas actuales del seguimiento
+function updateEstadoOptionsFromSeguimiento() {
+    const filtroEstado = document.getElementById('estado');
+    const tbody = document.getElementById('seguimiento-tbody');
+    if (!filtroEstado || !tbody) return;
+    const filas = Array.from(tbody.querySelectorAll('tr')).filter(tr => tr.id !== 'seguimiento-mensaje-no-resultados');
+    const estadosSet = new Set();
+    filas.forEach(fila => {
+        const estado = (fila.children[3] && fila.children[3].textContent) ? fila.children[3].textContent.trim() : '';
+        if (estado) estadosSet.add(estado);
+    });
+    filtroEstado.innerHTML = '<option value="">TODOS</option>';
+    Array.from(estadosSet).sort().forEach(estado => {
+        filtroEstado.innerHTML += `<option value="${estado}">${estado}</option>`;
+    });
+}
+
+// Escape básico para HTML
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Disparar la carga de seguimiento al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    loadSeguimiento()
+        .then(() => updateEstadoOptionsFromSeguimiento())
+        .catch(err => console.error('Fallo cargando seguimiento', err));
 });
 
 // *------------**************-------------------*
