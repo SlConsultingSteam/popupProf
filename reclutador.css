@@ -1,3 +1,15 @@
+/* Barra de scroll horizontal superior para tablas */
+.table-scroll-top {
+    overflow-x: auto;
+    margin-bottom: 0;
+    height: 18px;
+    position: relative;
+    overflow-y: hidden;
+}
+
+.table-scroll-top-spacer {
+    height: 1px;
+}
 /* --- LAYOUT Y ENCABEZADO --- */
 body {
     font-family: "Poppins", sans-serif;
@@ -615,6 +627,15 @@ input[type="number"] {
     width: 100%;
     overflow-x: auto;
     margin-top: 10px;
+}
+
+/* Ocultar barra de scroll horizontal inferior, pero permitir scroll */
+.table-responsive-seguimiento:not(.table-scroll-top) {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+.table-responsive-seguimiento:not(.table-scroll-top)::-webkit-scrollbar {
+    display: none;
 }
 
 .table-responsive-seguimiento::-webkit-scrollbar {

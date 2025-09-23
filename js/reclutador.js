@@ -384,35 +384,34 @@ safeAddListener("partedol", "input", function (event) {
     this.value = this.value.replace(/\d/g, '');
 });
 
-// Filtros de estado y buscador para seguimiento
+// Filtro real por estado y buscador para seguimiento
 document.addEventListener("DOMContentLoaded", function () {
     const filtroEstado = document.getElementById("estado");
     const buscador = document.getElementById("buscadorSeguimiento");
-    const filas = document.querySelectorAll("tbody tr");
 
     // Función para eliminar tildes/acentos
     function quitarTildes(texto) {
         return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
-    function filtrarTabla() {
-        const estadoSeleccionado = filtroEstado ? filtroEstado.value.toLowerCase() : "";
-        const textoBusqueda = buscador ? quitarTildes(buscador.value.trim().toLowerCase()) : "";
+    async function recargarSeguimiento() {
+        const estadoSeleccionado = filtroEstado ? filtroEstado.value : "";
+        await loadSeguimiento(estadoSeleccionado);
+        updateEstadoOptionsFromSeguimiento();
+        // Aplica el filtro de búsqueda después de recargar
+        filtrarBusqueda();
+    }
 
+    function filtrarBusqueda() {
+        const textoBusqueda = buscador ? quitarTildes(buscador.value.trim().toLowerCase()) : "";
+        const filas = document.querySelectorAll("#seguimiento-tbody tr");
         let visibles = 0;
         filas.forEach(fila => {
-            // Saltar la fila de mensaje
             if (fila.id === "seguimiento-mensaje-no-resultados") return;
-            const estado = (fila.children[3] && fila.children[3].textContent) ? fila.children[3].textContent.trim().toLowerCase() : "";
             const nombre = (fila.children[0] && fila.children[0].textContent) ? quitarTildes(fila.children[0].textContent.trim().toLowerCase()) : "";
             const telefono = (fila.children[1] && fila.children[1].textContent) ? quitarTildes(fila.children[1].textContent.trim().toLowerCase()) : "";
-
-            // Filtro por estado
-            const coincideEstado = estadoSeleccionado === "" || estado.includes(estadoSeleccionado);
-            // Filtro por nombre o teléfono (sin tildes)
             const coincideBusqueda = textoBusqueda === "" || nombre.includes(textoBusqueda) || telefono.includes(textoBusqueda);
-
-            if (coincideEstado && coincideBusqueda) {
+            if (coincideBusqueda) {
                 fila.style.display = "";
                 visibles++;
             } else {
@@ -426,15 +425,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (filtroEstado) {
-        filtroEstado.addEventListener("change", filtrarTabla);
+        filtroEstado.addEventListener("change", recargarSeguimiento);
     }
     if (buscador) {
-        buscador.addEventListener("input", filtrarTabla);
+        buscador.addEventListener("input", filtrarBusqueda);
     }
 });
 
-// Cargar datos de Seguimiento desde la API según el origen (nombre_completo del usuario)
-async function loadSeguimiento() {
+// Cargar datos de Seguimiento desde la API según el origen (nombre_completo del usuario) y estado
+async function loadSeguimiento(estadoFiltro = "") {
     const tbody = document.getElementById('seguimiento-tbody');
     if (!tbody) return;
 
@@ -514,7 +513,10 @@ async function loadSeguimiento() {
             }
         }
 
-        rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad, observaciones });
+        // Filtrar por estado si se seleccionó uno
+        if (!estadoFiltro || (estado && estado.toLowerCase() === estadoFiltro.toLowerCase())) {
+            rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad, observaciones });
+        }
     }
 
     // Renderizar filas
@@ -567,33 +569,30 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Disparar la carga de seguimiento al iniciar
+// Disparar la carga de seguimiento al iniciar y delegar eventos de observación
 document.addEventListener('DOMContentLoaded', () => {
-    loadSeguimiento()
-        .then(() => updateEstadoOptionsFromSeguimiento())
-        .then(() => {
-            // Delegación de eventos para los botones de observación
-            const tbody = document.getElementById('seguimiento-tbody');
-            if (tbody) {
-                tbody.addEventListener('click', function (e) {
-                    const btn = e.target.closest('.btn-observacion');
-                    if (btn) {
-                        const nombre = btn.getAttribute('data-nombre') || '';
-                        const observacion = btn.getAttribute('data-observacion') || '';
-                        // Título del modal
-                        const modalTitle = document.getElementById('modalObservacionUnicaLabel');
-                        if (modalTitle) modalTitle.textContent = `OBSERVACIÓN DE: ${nombre}`;
-                        // Textarea de observación
-                        const textarea = document.getElementById('modalObservacionUnicaTextarea');
-                        if (textarea) textarea.value = observacion;
-                        // Mostrar el modal
-                        const modal = new bootstrap.Modal(document.getElementById('modalObservacionUnica'));
-                        modal.show();
-                    }
-                });
+    // Carga inicial
+    loadSeguimiento().then(() => updateEstadoOptionsFromSeguimiento());
+    // Delegación de eventos para los botones de observación
+    const tbody = document.getElementById('seguimiento-tbody');
+    if (tbody) {
+        tbody.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-observacion');
+            if (btn) {
+                const nombre = btn.getAttribute('data-nombre') || '';
+                const observacion = btn.getAttribute('data-observacion') || '';
+                // Título del modal
+                const modalTitle = document.getElementById('modalObservacionUnicaLabel');
+                if (modalTitle) modalTitle.textContent = `OBSERVACIÓN DE: ${nombre}`;
+                // Textarea de observación
+                const textarea = document.getElementById('modalObservacionUnicaTextarea');
+                if (textarea) textarea.value = observacion;
+                // Mostrar el modal
+                const modal = new bootstrap.Modal(document.getElementById('modalObservacionUnica'));
+                modal.show();
             }
-        })
-        .catch(err => console.error('Fallo cargando seguimiento', err));
+        });
+    }
 });
 
 // *------------**************-------------------*
