@@ -6,8 +6,6 @@ body {
     background: #e6e6e6;
 }
 
-
-
 header {
     background: #222;
     color: white;
@@ -36,6 +34,69 @@ nav a {
 nav a:hover {
     color: #c58bfc;
 }
+
+/* Centrar el título de la modal de observación */
+.modal-title-observacion {
+    text-align: center;
+    width: 100%;
+    display: block;
+}
+
+/* Modal de observación mejorada */
+.modal-header-observacion {
+    background: #9b51e0 !important;
+    color: #fff !important;
+    border-top-left-radius: 1rem !important;
+    border-top-right-radius: 1rem !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Botón de cerrar arriba a la derecha en la modal de observación */
+.modal-header-observacion .btn-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    margin: 0;
+    z-index: 2;
+    border: none;
+    ;
+}
+
+.modal-lg .modal-content {
+    min-height: 70vh;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-textarea-observacion {
+    resize: none !important;
+    border-width: 2px !important;
+    font-size: 18px;
+    background: #faf7ff;
+    color: #333;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 0;
+    width: 100%;
+    min-height: 250px;
+    height: 40vh;
+    max-height: 60vh;
+}
+
+/* --- LAYOUT Y ENCABEZADO --- */
+body {
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #e6e6e6;
+}
+
+
 
 .piezareclu img {
     width: 481px;
@@ -72,7 +133,7 @@ nav a:hover {
 }
 
 main {
-    padding: 30px;
+    padding: 20px 0px 0px 0px;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -191,6 +252,76 @@ button {
 }
 
 /* Tabla de seguimiento */
+/* Estilo para botón de observación */
+.btn-observacion {
+    display: block;
+    margin: 0 auto;
+    min-width: 80px;
+    max-width: 120px;
+    width: 90%;
+    background: #9b51e0;
+    color: #fff;
+    font-weight: bold;
+    font-size: 13px;
+    border: none;
+    border-radius: 5px;
+    padding: 4px 0;
+    text-align: center;
+    transition: background 0.3s;
+    box-shadow: none;
+}
+
+.btn-observacion:hover,
+.btn-observacion:focus {
+    background: #8432c6;
+    color: #fff;
+    outline: none;
+}
+
+/* Ajuste de ancho para columna 'nombre' */
+.tabla-seguimiento th.col-nombre,
+.tabla-seguimiento td:first-child {
+    min-width: 320px;
+    width: 40%;
+    max-width: 600px;
+    white-space: nowrap;
+}
+
+.tabla-seguimiento th.col-nombre {
+    width: 40%;
+}
+
+/* Ajuste de ancho para columna 'proyecto' */
+.tabla-seguimiento th.col-proyecto,
+.tabla-seguimiento td:nth-child(6) {
+    min-width: 220px;
+    width: 20%;
+    max-width: 350px;
+    white-space: nowrap;
+}
+
+.tabla-seguimiento th.col-proyecto {
+    width: 20%;
+}
+
+@media (max-width: 900px) {
+
+    .tabla-seguimiento th.col-proyecto,
+    .tabla-seguimiento td:nth-child(6) {
+        min-width: 140px;
+        width: 30%;
+    }
+}
+
+@media (max-width: 900px) {
+
+    .tabla-seguimiento th.col-nombre,
+    .tabla-seguimiento td:first-child {
+        min-width: 220px;
+        width: 60%;
+    }
+}
+
 .filters {
     display: flex;
     gap: 20px;
@@ -237,7 +368,7 @@ tbody tr:hover {
     }
 }
 
-/* Cambiar el color de fondo cuando se hace clic (estado :active) */
+
 .accordion-button:active,
 .accordion-button:focus {
     background-color: #6f42c1 !important;

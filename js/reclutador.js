@@ -105,7 +105,6 @@ safeAddListener('form1-form', 'submit', async function (e) {
     const telefono2 = (document.getElementById('telefono2')?.value || '').trim();
     const fechaNacimientoBebe = (document.getElementById('fechaNacimientoBebe')?.value || '').trim();
     const usuarioCrema = (document.getElementById('usuarioCrema')?.value || '').trim();
-    const ciudad = (document.getElementById('ciudad')?.value || '').trim();
 
     // Guardar JSON localmente (último envío)
     const formJson = {
@@ -123,7 +122,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
         fecha_nacimiento_bebe: fechaNacimientoBebe || null,
         usuario_crema: usuarioCrema || null
     };
-    try { localStorage.setItem('dermaligh26_form_last', JSON.stringify(formJson)); } catch {}
+    try { localStorage.setItem('dermaligh26_form_last', JSON.stringify(formJson)); } catch { }
 
     // Verificar existencia por documento y teléfono 1
     if (!identificacion && !telefono1) {
@@ -157,7 +156,6 @@ safeAddListener('form1-form', 'submit', async function (e) {
     if (sexo) payloadInsert.sexo = sexo;
     if (nse) payloadInsert.nse = nse;
     if (fechaEnvio) payloadInsert.fecha_registro = fechaEnvio;
-    if (ciudad) payloadInsert.ciudad = ciudad.toUpperCase();
 
     // usar nombre completo del usuario (si existe) como origen_dato, fallback 'RECLUTADORA'
     const origenFromLogin = sessionStorage.getItem('nombre_completo') || '';
@@ -237,7 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Mapea value del select a los collapse ids que deben abrirse
     const proyectoPanelMap = {
         // value: [collapseIds...]
-        '1': ['collapseTwo','collapseOne'] // Derma Ligh (26): mostrar Información (collapseTwo) y Formulario (collapseOne)
+        '1': ['collapseTwo', 'collapseOne'] // Derma Ligh (26): mostrar Información (collapseTwo) y Formulario (collapseOne)
         // agrega más mappings si tienes más proyectos
     };
 
@@ -450,6 +448,7 @@ async function loadSeguimiento() {
     try {
         const url = `${API_BASE}/participantes/origen/${encodeURIComponent(origen)}`;
         const resp = await getJSON(url, 'participantes/origen');
+        console.log('Respuesta completa de la API participantes/origen:', resp);
         if (Array.isArray(resp)) participantes = resp;
         else if (resp) participantes = [resp];
     } catch (e) {
@@ -470,6 +469,7 @@ async function loadSeguimiento() {
         let idProyecto = null;
         let nombreProyecto = '';
         let idBdProyecto = null;
+        let observaciones = '';
 
         if (idp != null) {
             try {
@@ -480,6 +480,7 @@ async function loadSeguimiento() {
                     estado = bdObj?.estado_participante || bdObj?.estado || '';
                     idProyecto = bdObj?.id_proyecto ?? bdObj?.proyecto_id ?? null;
                     idBdProyecto = bdObj?.id_bdproyecto ?? bdObj?.id ?? bdObj?.ID ?? null;
+                    observaciones = bdObj?.observaciones || '';
                 }
             } catch (e) {
                 console.warn('Sin BDProyecto para participante', idp, e?.message || e);
@@ -513,7 +514,7 @@ async function loadSeguimiento() {
             }
         }
 
-        rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad });
+        rows.push({ nombre, telefono, email, estado, fechaRegistro, proyecto: nombreProyecto || (idProyecto != null ? `ID ${idProyecto}` : ''), efectividad: '', fechaEfectividad, observaciones });
     }
 
     // Renderizar filas
@@ -528,7 +529,8 @@ async function loadSeguimiento() {
             `<td>${escapeHtml(r.proyecto)}</td>` +
             `<td>${escapeHtml(r.efectividad)}</td>` +
             `<td>${escapeHtml(r.fechaEfectividad)}</td>` +
-        `</tr>`;
+            `<td><button type="button" class="btn-observacion" data-nombre="${escapeHtml(r.nombre)}" data-observacion="${escapeHtml(r.observaciones || '')}">Ver</button></td>` +
+            `</tr>`;
     }
     tbody.insertAdjacentHTML('beforeend', html);
 
@@ -569,6 +571,28 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
     loadSeguimiento()
         .then(() => updateEstadoOptionsFromSeguimiento())
+        .then(() => {
+            // Delegación de eventos para los botones de observación
+            const tbody = document.getElementById('seguimiento-tbody');
+            if (tbody) {
+                tbody.addEventListener('click', function (e) {
+                    const btn = e.target.closest('.btn-observacion');
+                    if (btn) {
+                        const nombre = btn.getAttribute('data-nombre') || '';
+                        const observacion = btn.getAttribute('data-observacion') || '';
+                        // Título del modal
+                        const modalTitle = document.getElementById('modalObservacionUnicaLabel');
+                        if (modalTitle) modalTitle.textContent = `OBSERVACIÓN DE: ${nombre}`;
+                        // Textarea de observación
+                        const textarea = document.getElementById('modalObservacionUnicaTextarea');
+                        if (textarea) textarea.value = observacion;
+                        // Mostrar el modal
+                        const modal = new bootstrap.Modal(document.getElementById('modalObservacionUnica'));
+                        modal.show();
+                    }
+                });
+            }
+        })
         .catch(err => console.error('Fallo cargando seguimiento', err));
 });
 

@@ -286,77 +286,47 @@
                                             </div>
                                         </div>
                                         <div class="table-responsive-seguimiento">
-                                            <table>
+                                            <table class="tabla-seguimiento">
                                                 <thead>
                                                     <tr>
-                                                        <th>Nombre</th>
+                                                        <th class="col-nombre">Nombre</th>
                                                         <th>Teléfono</th>
                                                         <th>Email</th>
                                                         <th>Estado</th>
                                                         <th>Fecha de Registro</th>
-                                                        <th>Proyecto</th>
+                                                        <th class="col-proyecto">Proyecto</th>
                                                         <th>Efectividad</th>
                                                         <th>Fecha de efectividad</th>
+                                                        <th class="col-observacion">Observación</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="seguimiento-tbody">
-                                                    <tr id="seguimiento-mensaje-no-resultados" style="display:none;">
-                                                        <td colspan="8" class="seguimiento-no-resultados-td">No se
-                                                            encontraron participantes con ese criterio.</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>María Rodríguez</td>
-                                                        <td>3101234567</td>
-                                                        <td>maria.rodriguez@gmail.com</td>
-                                                        <td>ACTIVA</td>
-                                                        <td>10/09/2025</td>
-                                                        <td>DERMA LIGH (26)</td>
-                                                        <td>Alta</td>
-                                                        <td>15/09/2025</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Laura Gómez</td>
-                                                        <td>3112345678</td>
-                                                        <td>laura.gomez@gmail.com</td>
-                                                        <td>EN PROCESO</td>
-                                                        <td>11/09/2025</td>
-                                                        <td>DERMA LIGH (26)</td>
-                                                        <td>Media</td>
-                                                        <td>16/09/2025</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Carolina Torres</td>
-                                                        <td>3123456789</td>
-                                                        <td>carolina.torres@gmail.com</td>
-                                                        <td>NO CONTESTA</td>
-                                                        <td>12/09/2025</td>
-                                                        <td>DERMA LIGH (26)</td>
-                                                        <td>Baja</td>
-                                                        <td>18/10/2025</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Paola Martínez</td>
-                                                        <td>3134567890</td>
-                                                        <td>paola.martinez@gmail.com</td>
-                                                        <td>FINALIZADO</td>
-                                                        <td>13/09/2025</td>
-                                                        <td>DERMA LIGH (26)</td>
-                                                        <td>Alta</td>
-                                                        <td>17/09/2025</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Andrea López</td>
-                                                        <td>3145678901</td>
-                                                        <td>andrea.lopez@gmail.com</td>
-                                                        <td>PENDIENTE</td>
-                                                        <td>14/09/2025</td>
-                                                        <td>DERMA LIGH (26)</td>
-                                                        <td>Media</td>
-                                                        <td>17/09/2025</td>
-                                                    </tr>
+
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        <div class="modal fade" id="modalObservacionUnica" tabindex="-1"
+                                            aria-labelledby="modalObservacionUnicaLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                <div class="modal-content rounded-4 shadow">
+                                                    <div
+                                                        class="modal-header modal-header-observacion bg-primary text-white rounded-top-4">
+                                                        <h5 class="modal-title fw-bold modal-title-observacion"
+                                                            id="modalObservacionUnicaLabel"></h5>
+                                                        <button type="button" class="btn-close btn-close-white"
+                                                            data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <label class="mb-2 fw-semibold"
+                                                            for="modalObservacionUnicaTextarea">Observación:</label>
+                                                        <textarea id="modalObservacionUnicaTextarea"
+                                                            class="form-control border-2 modal-textarea-observacion"
+                                                            rows="4" readonly></textarea></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </section>
                                 </div>
                             </div>
