@@ -105,7 +105,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
     const telefono1 = (document.getElementById('telefono1')?.value || '').trim();
     const telefono2 = (document.getElementById('telefono2')?.value || '').trim();
     const fechaNacimientoBebe = (document.getElementById('fechaNacimientoBebe')?.value || '').trim();
-    const usuarioCrema = (document.getElementById('usuarioCrema')?.value || '').trim();
+    const ciudad = (document.getElementById('ciudad')?.value || '').trim();
 
     // Guardar JSON localmente (último envío)
     const formJson = {
@@ -121,7 +121,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
         telefono_1: telefono1 || null,
         telefono_2: telefono2 || null,
         fecha_nacimiento_bebe: fechaNacimientoBebe || null,
-        usuario_crema: usuarioCrema || null
+        ciudad: ciudad || null
     };
     try { localStorage.setItem('dermaligh26_form_last', JSON.stringify(formJson)); } catch { }
 
@@ -157,6 +157,7 @@ safeAddListener('form1-form', 'submit', async function (e) {
     if (sexo) payloadInsert.sexo = sexo;
     if (nse) payloadInsert.nse = nse;
     if (fechaEnvio) payloadInsert.fecha_registro = fechaEnvio;
+    if (ciudad) payloadInsert.ciudad = ciudad;
 
     // usar nombre completo del usuario (si existe) como origen_dato, fallback 'RECLUTADORA'
     const origenFromLogin = sessionStorage.getItem('nombre_completo') || '';
