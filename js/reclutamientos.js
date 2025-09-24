@@ -879,7 +879,7 @@ let modalState = {
 // Si ves que ahora se suman horas incorrectas ajusta este valor.
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
-const DEBUG_UI = true; // activar panel debug en modal
+const DEBUG_UI = false; // activar panel debug en modal
 
 // Helper de logging que respeta DEBUG_UI
 function dbg(...args) {
