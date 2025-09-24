@@ -1485,6 +1485,8 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
     direccion: originalParticipante.direccion ?? null,
     ciudad: originalParticipante.ciudad ?? null,
     nacionalidad: originalParticipante.nacionalidad ?? null,
+    tipo_documento: originalParticipante.tipo_documento ?? null,
+    documento: originalParticipante.documento ?? null,
     fecha_nacimiento: originalParticipante.fecha_nacimiento ?? null,
     tipo_vivienda: originalParticipante.tipo_vivienda ?? null,
     fecha_registro: originalParticipante.fecha_registro ?? null,
