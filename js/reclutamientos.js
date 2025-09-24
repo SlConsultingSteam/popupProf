@@ -1,4 +1,10 @@
 const API_BASE = "https://api-postgre-ee5da0d4a499.herokuapp.com";
+// Debug helper gated by sessionStorage.DEBUG_UI === 'true'
+function dbg(...args) {
+  try {
+    if (sessionStorage.getItem('DEBUG_UI') === 'true') console.log(...args);
+  } catch (_) {}
+}
 // --- Lógica de colores para campos de fechas ---
 function aplicarLogicaColoresFechas(clone) {
   // --- Colores automáticos para fecha_asignacion_supervisora ---
@@ -873,7 +879,7 @@ let modalState = {
 // Si ves que ahora se suman horas incorrectas ajusta este valor.
 const TIME_OFFSET_HOURS = 5; // añade 5 horas al mostrar
 const INTERVAL_REGEX = /^\d{1,3}:\d{2}(:\d{2})?$/; // permite horas > 23 si es necesario
-const DEBUG_UI = false; // activar panel debug en modal
+const DEBUG_UI = true; // activar panel debug en modal
 
 // Helper de logging que respeta DEBUG_UI
 function dbg(...args) {
@@ -1329,11 +1335,11 @@ async function handleModalSave(e) {
   const changed = {};
   form.querySelectorAll("[data-field]").forEach(inp => {
     const key = inp.getAttribute("data-field");
-  // Saltar campos derivados que no deben guardarse directamente
-  if (key === 'bebe_edad_meses') return;
-  if (modalState.originalValues[key] !== inp.value) {
+    // Saltar campos derivados que no deben guardarse directamente
+    if (key === 'bebe_edad_meses') return;
+    if (modalState.originalValues[key] !== inp.value) {
       const backendKey = saveNameOverride[key] || key;
-      changed[backendKey] = inp.value;
+      changed[key] = { backendKey, value: inp.value };
     }
   });
 
@@ -1390,8 +1396,9 @@ async function handleModalSave(e) {
   const payloadBdProyecto = {};
   const payloadReclutamientoPartial = {};
 
-  Object.entries(changed).forEach(([origKey, val]) => {
-    let k = origKey;
+  Object.entries(changed).forEach(([origKey, meta]) => {
+    let k = (meta && meta.backendKey) ? meta.backendKey : origKey;
+    let val = (meta && Object.prototype.hasOwnProperty.call(meta,'value')) ? meta.value : meta;
   // No normalizar 'estado_encuadre' a boolean: se enviará como string en el PUT
   if (['efectividad','status_efectividad_final','confirmacion_verbal'].includes(k)) {
       if (val === 'true') val = true; else if (val === 'false') val = false; else val = null;
@@ -1406,7 +1413,7 @@ async function handleModalSave(e) {
     if (k === 'fecha_realizacion_profesional') k = 'fecha_realizacion_p';
     if (k === 'fecha_entrevista_final') k = 'fecha_final';
     // Observaciones del bono pertenecen al RECLUTAMIENTO, no a bdProyecto
-    if (k === 'observaciones_bono') {
+    if (origKey === 'observaciones_bono') {
       // Alias a 'observaciones' pero se enviará en el payload de reclutamiento
       k = 'observaciones';
     }
@@ -1432,7 +1439,7 @@ async function handleModalSave(e) {
       payloadParticipante[k] = val;
     } else if (hijoKeys.has(k)) {
       payloadBdHijo[k] = val;
-    } else if (k === 'observaciones' && origKey === 'observaciones_bono') {
+    } else if (k === 'observaciones' && (origKey === 'observaciones_bono')) {
       // Forzar que 'observaciones' provenientes de observaciones_bono vayan a reclutamiento
       payloadReclutamientoPartial[k] = val;
     } else if (bdProyectoKeys.has(k)) {
@@ -1495,7 +1502,11 @@ if (modalState.participanteId && Object.keys(payloadParticipante).length) {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadParticipante)
-  }, 'PUT participante').then(r => ({ target: "participante", r })));
+  }, 'PUT participante').then(async r => {
+    let bodyText = null; try { bodyText = await r.clone().text(); } catch (_) {}
+    dbg('[PUT participante response]', r.status, bodyText);
+    return { target: "participante", r, bodyText };
+  }));
 }
 
 // Para bdhijo: construir payload completo
@@ -1520,7 +1531,11 @@ if (modalState.hijoId && Object.keys(payloadBdHijo).length) {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadHijo)
-  }, 'PUT bdhijo').then(r => ({ target: "bdhijo", r })));
+  }, 'PUT bdhijo').then(async r => {
+    let bodyText = null; try { bodyText = await r.clone().text(); } catch (_) {}
+    dbg('[PUT bdhijo response]', r.status, bodyText);
+    return { target: "bdhijo", r, bodyText };
+  }));
 }
 
 // Para bdproyecto: incluir TODOS los campos para mantener estado completo
@@ -1632,7 +1647,11 @@ if (modalState.bdProyectoId && Object.keys(payloadBdProyecto).length) {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(fullPayloadBdProyecto)
-  }, 'PUT bdproyecto').then(r => ({ target: "bdproyecto", r })));
+  }, 'PUT bdproyecto').then(async r => {
+    let bodyText = null; try { bodyText = await r.clone().text(); } catch (_) {}
+    dbg('[PUT bdproyecto response]', r.status, bodyText);
+    return { target: "bdproyecto", r, bodyText };
+  }));
 }
 
 // Para reclutamiento: payload parcial (solo campos modificados)
@@ -1776,6 +1795,7 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
         fullPayload.modalidad_entrevista = v;
       } else if (k === 'observaciones') {
         fullPayload.observaciones = v;
+        dbg('[observaciones from UI]', v);
         continue;
       } else if (k === 'estado') {
         // Enviar como string ('true'|'false'|'')
@@ -1923,11 +1943,19 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
 
   dbg('[PUT reclutamiento payload]', JSON.parse(JSON.stringify(fullPayload)));
 
+    dbg('[PUT reclutamiento URL]', `${API_BASE}/reclutamientos/${modalState.reclutamientoId}`);
+    dbg('[PUT reclutamiento payload.observaciones]', fullPayload?.observaciones);
+    dbg('[PUT reclutamiento payload]', fullPayload);
     requests.push(requestWithRetry(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, {
       method:"PUT",
       headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
       body:JSON.stringify(fullPayload)
-    }, 'PUT reclutamiento').then(r => ({target:"reclutamiento", r, debugPayload: fullPayload})));
+    }, 'PUT reclutamiento').then(async r => {
+      let bodyText = null;
+      try { bodyText = await r.clone().text(); } catch (_) {}
+      dbg('[PUT reclutamiento response]', r.status, bodyText);
+      return {target:"reclutamiento", r, debugPayload: fullPayload, bodyText};
+    }));
   }
 
   const results = await Promise.all(requests);
@@ -1939,6 +1967,16 @@ if (modalState.reclutamientoId && Object.keys(payloadReclutamientoPartial).lengt
     }
   }
   if (!fail) {
+    // DEBUG: verificar que observaciones se haya guardado en reclutamiento
+    try {
+      if (sessionStorage.getItem('DEBUG_UI') === 'true' && modalState.reclutamientoId && payloadReclutamientoPartial && Object.prototype.hasOwnProperty.call(payloadReclutamientoPartial, 'observaciones')) {
+        const verif = await fetchJSON(`${API_BASE}/reclutamientos/${modalState.reclutamientoId}`, token, 'verify reclutamiento');
+        dbg('[VERIFY reclutamiento.observaciones]', {
+          sent: payloadReclutamientoPartial.observaciones,
+          got: verif?.observaciones
+        });
+      }
+    } catch (_) {}
     cacheReclutamientos.clear();
     await cargarReclutamientos();
     modalInstance.hide();
